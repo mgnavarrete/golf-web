@@ -105,7 +105,6 @@ class BusinessSettingsSerializer(serializers.ModelSerializer):
 
 class CashClosureSerializer(serializers.ModelSerializer):
     closed_by_name = serializers.SerializerMethodField()
-    reopened_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CashClosure
@@ -131,21 +130,11 @@ class CashClosureSerializer(serializers.ModelSerializer):
             "closed_by",
             "closed_by_name",
             "closed_at",
-            "reopened_by",
-            "reopened_by_name",
-            "reopened_at",
-            "reopen_reason",
         ]
 
     def get_closed_by_name(self, obj):
         name = f"{obj.closed_by.first_name} {obj.closed_by.last_name}".strip()
         return name or obj.closed_by.email
-
-    def get_reopened_by_name(self, obj):
-        if not obj.reopened_by:
-            return None
-        name = f"{obj.reopened_by.first_name} {obj.reopened_by.last_name}".strip()
-        return name or obj.reopened_by.email
 
 
 class UserAdminSerializer(serializers.ModelSerializer):

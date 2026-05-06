@@ -31,6 +31,11 @@ export interface CourseEntry {
   updated_at: string;
 }
 
+export type CourseEntryPayload = Omit<
+  CourseEntry,
+  "id" | "created_by" | "created_by_name" | "created_at" | "updated_at"
+>;
+
 export interface RangeOrder {
   id: number;
   customer_name: string;
@@ -44,6 +49,11 @@ export interface RangeOrder {
   created_at: string;
   updated_at: string;
 }
+
+export type RangeOrderPayload = Omit<
+  RangeOrder,
+  "id" | "created_by" | "created_by_name" | "created_at" | "updated_at"
+>;
 
 export interface DailySummary {
   operational_date: string;
@@ -66,7 +76,7 @@ export interface CashClosure {
   id: number;
   operational_date: string;
   scope: "COURSE" | "RANGE" | "FINAL";
-  status: "CLOSED" | "REOPENED";
+  status: "CLOSED";
   total_course_clp: number;
   total_range_clp: number;
   total_general_clp: number;
@@ -82,9 +92,12 @@ export interface CashClosure {
   notes: string;
   closed_by_name: string;
   closed_at: string;
-  reopened_by_name?: string | null;
-  reopened_at?: string | null;
-  reopen_reason?: string;
+}
+
+export interface ReopenScopeResponse {
+  operational_date: string;
+  deleted_scopes: Array<"COURSE" | "RANGE" | "FINAL">;
+  detail: string;
 }
 
 export interface ClosuresStatusResponse {
@@ -166,12 +179,12 @@ export async function listCourseEntries(params: Record<string, string | number> 
   return data;
 }
 
-export async function createCourseEntry(payload: Omit<CourseEntry, "id" | "created_by" | "created_by_name" | "created_at" | "updated_at">) {
+export async function createCourseEntry(payload: CourseEntryPayload) {
   const { data } = await api.post<CourseEntry>("/api/course-entries/", payload);
   return data;
 }
 
-export async function updateCourseEntry(id: number, payload: Partial<CourseEntry>) {
+export async function updateCourseEntry(id: number, payload: Partial<CourseEntryPayload>) {
   const { data } = await api.patch<CourseEntry>(`/api/course-entries/${id}/`, payload);
   return data;
 }
@@ -185,12 +198,12 @@ export async function listRangeOrders(params: Record<string, string | number> = 
   return data;
 }
 
-export async function createRangeOrder(payload: Partial<RangeOrder>) {
+export async function createRangeOrder(payload: RangeOrderPayload) {
   const { data } = await api.post<RangeOrder>("/api/range-orders/", payload);
   return data;
 }
 
-export async function updateRangeOrder(id: number, payload: Partial<RangeOrder>) {
+export async function updateRangeOrder(id: number, payload: Partial<RangeOrderPayload>) {
   const { data } = await api.patch<RangeOrder>(`/api/range-orders/${id}/`, payload);
   return data;
 }
@@ -219,9 +232,8 @@ export async function closeDayScope(payload: {
 export async function reopenDayScope(payload: {
   scope: "COURSE" | "RANGE" | "FINAL";
   operational_date?: string;
-  reason: string;
 }) {
-  const { data } = await api.post<CashClosure>("/api/closures/reopen/", payload);
+  const { data } = await api.post<ReopenScopeResponse>("/api/closures/reopen/", payload);
   return data;
 }
 

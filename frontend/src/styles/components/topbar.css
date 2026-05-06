@@ -203,7 +203,7 @@
   .mobile-menu-button {
     display: flex;
   }
-  
+
   .topbar {
     padding: 16px 16px 0 16px;
   }
@@ -216,39 +216,39 @@
     gap: 16px;
     padding: 16px;
   }
-  
+
   .topbar-left {
     flex: 1;
   }
-  
+
   .topbar-center {
     margin: 0;
   }
-  
+
   .topbar-right {
     margin-left: 0;
   }
-  
+
   .company-selector {
     width: 100%;
     min-width: unset;
   }
 
   /* Breadcrumb solo icono en móvil */
-  .topbar :deep(.breadcrumb-label) {
+  .topbar .breadcrumb-label {
     display: none;
   }
 
-  .topbar :deep(.breadcrumb-icon) {
+  .topbar .breadcrumb-icon {
     font-size: 20px;
     display: inline-block;
   }
 
-  .topbar :deep(.p-breadcrumb-separator) {
+  .topbar .p-breadcrumb-separator {
     display: none;
   }
 
-  .topbar :deep(.p-breadcrumb-link) {
+  .topbar .p-breadcrumb-link {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -258,19 +258,18 @@
     transition: background-color 0.2s ease;
   }
 
-  .topbar :deep(.p-breadcrumb-link:hover) {
+  .topbar .p-breadcrumb-link:hover {
     background-color: var(--minttu-bg);
   }
 
-  .topbar :deep(.p-breadcrumb-root) {
+  .topbar .p-breadcrumb-root {
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .topbar :deep(.p-breadcrumb-root .p-breadcrumb-link) {
+  .topbar .p-breadcrumb-root .p-breadcrumb-link {
     width: 32px;
     height: 32px;
   }
 }
-

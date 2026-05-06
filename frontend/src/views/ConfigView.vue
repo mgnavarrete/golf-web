@@ -6,23 +6,50 @@
     </div>
 
     <section class="card" v-if="canPatchSettings">
-      <h3>Negocio</h3>
-      <div class="row">
-        <label>Precio Cancha (Día de semana)</label>
-        <input v-model.number="settings.course_price_weekday_clp" type="number" min="1" />
+      <div class="settings-header">
+        <h3>Precios y Tarifas</h3>
+        <button v-if="!isEditingSettings" class="btn btn-secondary" @click="startEditSettings">
+          <i class="pi pi-pencil"></i> Editar Precios
+        </button>
       </div>
-      <div class="row">
-        <label>Precio Cancha (Finde / Festivo)</label>
-        <input v-model.number="settings.course_price_weekend_clp" type="number" min="1" />
+
+      <div v-if="!isEditingSettings" class="prices-grid">
+        <div class="price-card">
+          <span class="price-label">Cancha (Día de semana)</span>
+          <strong class="price-value">{{ formatClp(settings.course_price_weekday_clp) }}</strong>
+        </div>
+        <div class="price-card">
+          <span class="price-label">Cancha (Finde / Festivo)</span>
+          <strong class="price-value">{{ formatClp(settings.course_price_weekend_clp) }}</strong>
+        </div>
+        <div class="price-card">
+          <span class="price-label">Canasto Range (Unidad)</span>
+          <strong class="price-value">{{ formatClp(settings.default_range_unit_price_clp) }}</strong>
+        </div>
       </div>
-      <div class="row">
-        <label>Valor unitario canasto Range</label>
-        <input v-model.number="settings.default_range_unit_price_clp" type="number" min="1" />
+
+      <div v-else class="settings-form">
+        <div class="row">
+          <label>Cancha (Día de semana)</label>
+          <input v-model.number="settingsEdit.course_price_weekday_clp" type="number" min="1" />
+        </div>
+        <div class="row">
+          <label>Cancha (Finde / Festivo)</label>
+          <input v-model.number="settingsEdit.course_price_weekend_clp" type="number" min="1" />
+        </div>
+        <div class="row">
+          <label>Canasto Range (Unidad)</label>
+          <input v-model.number="settingsEdit.default_range_unit_price_clp" type="number" min="1" />
+        </div>
+        <div class="form-actions" style="margin-top: 16px">
+          <button class="btn btn-secondary" @click="cancelEditSettings">Cancelar</button>
+          <button class="btn btn-primary" @click="saveSettings">Guardar Cambios</button>
+        </div>
       </div>
-      <div class="form-actions" style="margin-top: 16px;">
-        <button class="btn btn-primary" @click="saveSettings">Guardar Precios</button>
-      </div>
-      <small v-if="settings.updated_at">Última actualización: {{ new Date(settings.updated_at).toLocaleString('es-CL') }}</small>
+
+      <small v-if="settings.updated_at && !isEditingSettings" class="updated-at">
+        Última actualización: {{ new Date(settings.updated_at).toLocaleString("es-CL") }}
+      </small>
     </section>
 
     <section class="card">
@@ -31,36 +58,38 @@
         <button class="btn btn-accent" @click="openCreate"><i class="pi pi-plus"></i> Nuevo usuario</button>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Nombre</th>
-            <th>Rol</th>
-            <th>Activo</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in users" :key="user.id">
-            <td>{{ user.email }}</td>
-            <td>{{ user.first_name }} {{ user.last_name }}</td>
-            <td>{{ user.role }}</td>
-            <td>{{ user.is_active ? 'Sí' : 'No' }}</td>
-            <td>
-              <button class="action" @click="openEdit(user)">Editar</button>
-              <button class="action danger" @click="remove(user.id)" :disabled="user.id === meId">Eliminar</button>
-            </td>
-          </tr>
-          <tr v-if="users.length === 0">
-            <td colspan="5" class="empty">Sin usuarios</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Nombre</th>
+              <th>Rol</th>
+              <th>Activo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="user in users" :key="user.id">
+              <td>{{ user.email }}</td>
+              <td>{{ user.first_name }} {{ user.last_name }}</td>
+              <td>{{ user.role }}</td>
+              <td>{{ user.is_active ? "Sí" : "No" }}</td>
+              <td class="actions-cell">
+                <button class="action" @click="openEdit(user)">Editar</button>
+                <button class="action danger" :disabled="user.id === meId" @click="askRemove(user.id)">Eliminar</button>
+              </td>
+            </tr>
+            <tr v-if="users.length === 0">
+              <td colspan="5" class="empty">Sin usuarios</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section v-if="showUserForm" class="card form-grid">
-      <h3>{{ editingId ? 'Editar Usuario' : 'Nuevo Usuario' }}</h3>
+      <h3>{{ editingId ? "Editar Usuario" : "Nuevo Usuario" }}</h3>
       <input v-model="userForm.email" type="email" placeholder="Email" />
       <input v-model="userForm.first_name" placeholder="Nombre" />
       <input v-model="userForm.last_name" placeholder="Apellido" />
@@ -76,13 +105,17 @@
       </label>
 
       <div class="permissions-grouped">
-        <div class="perm-group" v-for="group in permissionGroups" :key="group.title">
+        <div v-for="group in permissionGroups" :key="group.title" class="perm-group">
           <h4>{{ group.title }}</h4>
           <div class="perm-items">
-            <label class="switch-row" v-for="item in group.keys" :key="item.key">
+            <label v-for="item in group.keys" :key="item.key" class="switch-row">
               <span class="switch-label">{{ item.label }}</span>
               <div class="switch">
-                <input type="checkbox" :checked="!!userForm.permission_overrides[item.key]" @change="togglePermission(item.key, $event)" />
+                <input
+                  type="checkbox"
+                  :checked="!!userForm.permission_overrides[item.key]"
+                  @change="togglePermission(item.key, $event)"
+                />
                 <span class="slider"></span>
               </div>
             </label>
@@ -97,6 +130,17 @@
     </section>
 
     <p v-if="error" class="error">{{ error }}</p>
+
+    <ConfirmActionModal
+      :visible="deleteTargetUserId !== null"
+      title="Eliminar Usuario"
+      message="¿Seguro que deseas eliminar este usuario? Esta acción no se puede deshacer."
+      confirm-label="Eliminar"
+      confirm-class="btn-danger"
+      :loading="deletingUser"
+      @cancel="cancelRemove"
+      @confirm="confirmRemove"
+    />
   </div>
 </template>
 
@@ -113,6 +157,7 @@ import {
   type UserAdmin,
 } from "@/services/golf";
 import { useAuthStore } from "@/stores/auth";
+import ConfirmActionModal from "@/components/modals/ConfirmActionModal.vue";
 
 const auth = useAuthStore();
 const canPatchSettings = computed(() => auth.me?.permissions?.can_patch_settings || auth.isAdmin);
@@ -129,6 +174,18 @@ const settings = reactive<BusinessSettings>({
   course_price_weekend_clp: 25000,
   updated_at: "",
 });
+
+const isEditingSettings = ref(false);
+const settingsEdit = reactive<BusinessSettings>({
+  default_range_unit_price_clp: 5000,
+  course_price_weekday_clp: 20000,
+  course_price_weekend_clp: 25000,
+  updated_at: "",
+});
+
+function formatClp(value: number) {
+  return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(value);
+}
 
 const userForm = reactive<any>({
   email: "",
@@ -147,7 +204,7 @@ const permissionGroups = [
       { key: "can_manage_course_entries", label: "Ver Registros" },
       { key: "can_edit_course_entries", label: "Editar Registros" },
       { key: "can_delete_course_entries", label: "Eliminar Registros" },
-    ]
+    ],
   },
   {
     title: "Módulo Range",
@@ -155,7 +212,7 @@ const permissionGroups = [
       { key: "can_manage_range_orders", label: "Ver Pedidos" },
       { key: "can_edit_range_orders", label: "Editar Pedidos" },
       { key: "can_delete_range_orders", label: "Eliminar Pedidos" },
-    ]
+    ],
   },
   {
     title: "Reportes e Historial",
@@ -163,7 +220,7 @@ const permissionGroups = [
       { key: "can_view_dashboard", label: "Ver Dashboard" },
       { key: "can_view_reports", label: "Ver Reportes" },
       { key: "can_export_excel", label: "Exportar Excel/PDF" },
-    ]
+    ],
   },
   {
     title: "Administración y Cierres",
@@ -172,8 +229,8 @@ const permissionGroups = [
       { key: "can_reopen_closure", label: "Reabrir Cierre de Caja" },
       { key: "can_manage_users", label: "Administrar Usuarios" },
       { key: "can_patch_settings", label: "Modificar Precios/Config" },
-    ]
-  }
+    ],
+  },
 ];
 
 function resetUserForm() {
@@ -207,15 +264,31 @@ async function loadAll() {
   }
 }
 
+function startEditSettings() {
+  settingsEdit.course_price_weekday_clp = settings.course_price_weekday_clp;
+  settingsEdit.course_price_weekend_clp = settings.course_price_weekend_clp;
+  settingsEdit.default_range_unit_price_clp = settings.default_range_unit_price_clp;
+  isEditingSettings.value = true;
+}
+
+function cancelEditSettings() {
+  isEditingSettings.value = false;
+  error.value = "";
+}
+
 async function saveSettings() {
   error.value = "";
   try {
     const data = await updateBusinessSettings({
-      default_range_unit_price_clp: settings.default_range_unit_price_clp,
-      course_price_weekday_clp: settings.course_price_weekday_clp,
-      course_price_weekend_clp: settings.course_price_weekend_clp,
+      default_range_unit_price_clp: settingsEdit.default_range_unit_price_clp,
+      course_price_weekday_clp: settingsEdit.course_price_weekday_clp,
+      course_price_weekend_clp: settingsEdit.course_price_weekend_clp,
     });
+    settings.default_range_unit_price_clp = data.default_range_unit_price_clp;
+    settings.course_price_weekday_clp = data.course_price_weekday_clp;
+    settings.course_price_weekend_clp = data.course_price_weekend_clp;
     settings.updated_at = data.updated_at;
+    isEditingSettings.value = false;
   } catch (err: any) {
     error.value = err.response?.data?.detail || "No se pudo guardar configuración";
   }
@@ -276,14 +349,31 @@ async function saveUser() {
   }
 }
 
-async function remove(id: number) {
-  if (!confirm("¿Eliminar usuario?")) return;
+const deleteTargetUserId = ref<number | null>(null);
+const deletingUser = ref(false);
+
+function askRemove(id: number) {
+  deleteTargetUserId.value = id;
+}
+
+function cancelRemove() {
+  if (deletingUser.value) return;
+  deleteTargetUserId.value = null;
+}
+
+async function confirmRemove() {
+  if (!deleteTargetUserId.value) return;
+
   error.value = "";
+  deletingUser.value = true;
   try {
-    await deleteUser(id);
+    await deleteUser(deleteTargetUserId.value);
+    deleteTargetUserId.value = null;
     await loadUsers();
   } catch (err: any) {
     error.value = err.response?.data?.detail || "No se pudo eliminar usuario";
+  } finally {
+    deletingUser.value = false;
   }
 }
 
@@ -297,23 +387,80 @@ onMounted(loadAll);
   gap: 12px;
 }
 .header h1 {
-  margin-bottom: 6px;
+  margin: 0;
+  color: var(--minttu-text);
+  font-size: 1.5rem;
 }
 .header p {
+  margin: 4px 0 0;
   color: var(--minttu-gray);
 }
 .card {
   background: var(--minttu-white);
   border: none;
   border-radius: var(--minttu-radius-lg);
-  padding: 20px;
+  padding: 32px;
   box-shadow: var(--minttu-shadow-soft);
+}
+.card h3 {
+  margin-top: 0;
+  color: var(--minttu-primary);
+  border-bottom: 1px solid var(--minttu-border);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
 }
 .row {
   display: grid;
-  grid-template-columns: 1fr 180px 120px;
-  gap: 8px;
+  grid-template-columns: 1fr 200px;
+  gap: 16px;
   align-items: center;
+  margin-bottom: 12px;
+}
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--minttu-border);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+.settings-header h3 {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+.prices-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.price-card {
+  background: var(--minttu-bg);
+  padding: 16px;
+  border-radius: var(--minttu-radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border: 1px solid var(--minttu-border);
+}
+.price-label {
+  font-size: 13px;
+  color: var(--minttu-gray);
+  margin-bottom: 4px;
+}
+.price-value {
+  font-size: 20px;
+  color: var(--minttu-primary);
+  font-weight: 700;
+}
+.updated-at {
+  display: block;
+  margin-top: 12px;
+  color: var(--minttu-gray);
+  font-size: 12px;
+  text-align: center;
 }
 .users-header {
   display: flex;
@@ -338,9 +485,15 @@ th {
   color: var(--minttu-primary);
   font-weight: 600;
 }
-th:first-child { border-top-left-radius: 8px; }
-th:last-child { border-top-right-radius: 8px; }
-tbody tr:hover { background-color: var(--minttu-bg); }
+th:first-child {
+  border-top-left-radius: 8px;
+}
+th:last-child {
+  border-top-right-radius: 8px;
+}
+tbody tr:hover {
+  background-color: var(--minttu-bg);
+}
 .action {
   border: none;
   background: var(--minttu-border);
@@ -357,11 +510,11 @@ tbody tr:hover { background-color: var(--minttu-bg); }
   color: var(--minttu-white);
 }
 .action.danger {
-  background: #FEF2F2;
-  color: #DC2626;
+  background: #fef2f2;
+  color: #dc2626;
 }
 .action.danger:hover {
-  background: #DC2626;
+  background: #dc2626;
   color: var(--minttu-white);
 }
 .form-grid {
@@ -425,9 +578,12 @@ select:focus {
 .slider {
   position: absolute;
   cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: #ccc;
-  transition: .4s;
+  transition: 0.4s;
   border-radius: 20px;
 }
 .slider:before {
@@ -438,7 +594,7 @@ select:focus {
   left: 3px;
   bottom: 3px;
   background-color: white;
-  transition: .4s;
+  transition: 0.4s;
   border-radius: 50%;
 }
 input:checked + .slider {
@@ -449,8 +605,9 @@ input:checked + .slider:before {
 }
 .form-actions {
   display: flex;
-  gap: 8px;
   justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
 }
 .empty {
   text-align: center;
@@ -461,10 +618,11 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 1024px) {
-  .row {
+  .prices-grid,
+  .permissions-grouped {
     grid-template-columns: 1fr;
   }
-  .permissions-grouped {
+  .row {
     grid-template-columns: 1fr;
   }
 }

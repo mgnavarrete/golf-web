@@ -274,7 +274,10 @@ class CashClosuresStatusView(APIView):
         require_app_permission(request, "can_close_day")
         operational_date = _parse_operational_date(request.query_params.get("operational_date"))
 
-        closures = CashClosure.objects.filter(operational_date=operational_date).order_by("scope")
+        closures = CashClosure.objects.filter(
+            operational_date=operational_date,
+            status=CashClosure.STATUS_CLOSED,
+        ).order_by("scope")
         data = {
             "operational_date": str(operational_date),
             "closures": CashClosureSerializer(closures, many=True).data,
@@ -326,29 +329,22 @@ class CashCloseView(APIView):
         totals = calculate_day_totals(operational_date)
         totals["total_general_clp"] += adjustment_clp
 
-        closure, _ = CashClosure.objects.get_or_create(
+        # Limpia cierres legacy reabiertos para mantener flujo único de cierre activo.
+        CashClosure.objects.filter(
             operational_date=operational_date,
             scope=scope,
-            defaults={
-                **totals,
-                "adjustment_clp": adjustment_clp,
-                "notes": notes,
-                "status": CashClosure.STATUS_CLOSED,
-                "closed_by": request.user,
-                "per_user_totals": _per_user_totals(operational_date),
-            },
-        )
+        ).exclude(status=CashClosure.STATUS_CLOSED).delete()
 
-        if closure.status == CashClosure.STATUS_REOPENED:
-            for key, value in totals.items():
-                setattr(closure, key, value)
-            closure.adjustment_clp = adjustment_clp
-            closure.notes = notes
-            closure.status = CashClosure.STATUS_CLOSED
-            closure.closed_by = request.user
-            closure.closed_at = timezone.now()
-            closure.per_user_totals = _per_user_totals(operational_date)
-            closure.save()
+        closure = CashClosure.objects.create(
+            operational_date=operational_date,
+            scope=scope,
+            adjustment_clp=adjustment_clp,
+            notes=notes,
+            status=CashClosure.STATUS_CLOSED,
+            closed_by=request.user,
+            per_user_totals=_per_user_totals(operational_date),
+            **totals,
+        )
 
         return Response(CashClosureSerializer(closure).data, status=status.HTTP_201_CREATED)
 
@@ -364,10 +360,6 @@ class CashReopenView(APIView):
             raise ValidationError({"scope": "Debes indicar COURSE, RANGE o FINAL"})
 
         operational_date = _parse_operational_date(request.data.get("operational_date"))
-        reason = (request.data.get("reason") or "").strip()
-        if not reason:
-            raise ValidationError({"reason": "Debes indicar un motivo de reapertura"})
-
         try:
             closure = CashClosure.objects.get(
                 operational_date=operational_date,
@@ -377,7 +369,8 @@ class CashReopenView(APIView):
         except CashClosure.DoesNotExist as exc:
             raise ValidationError({"detail": "No existe cierre cerrado para esa fecha y área"}) from exc
 
-        closure.reopen(request.user, reason)
+        deleted_scopes: list[str] = [scope]
+        closure.delete()
 
         if scope in [CashClosure.SCOPE_COURSE, CashClosure.SCOPE_RANGE]:
             final = CashClosure.objects.filter(
@@ -386,9 +379,16 @@ class CashReopenView(APIView):
                 status=CashClosure.STATUS_CLOSED,
             ).first()
             if final:
-                final.reopen(request.user, f"Reabierto automáticamente por reapertura de {scope}. Motivo: {reason}")
+                final.delete()
+                deleted_scopes.append(CashClosure.SCOPE_FINAL)
 
-        return Response(CashClosureSerializer(closure).data)
+        return Response(
+            {
+                "operational_date": str(operational_date),
+                "deleted_scopes": deleted_scopes,
+                "detail": "Cierre reabierto correctamente",
+            }
+        )
 
 
 class BusinessSettingsView(APIView):
@@ -534,7 +534,11 @@ class ReportsRecordsView(APIView):
                 range_qs = range_qs.filter(payment_method=payment_method)
             response["range_orders"] = RangeOrderSerializer(range_qs.order_by("-created_at"), many=True).data
 
-        closures_qs = CashClosure.objects.filter(operational_date__gte=date_from, operational_date__lte=date_to).order_by("-operational_date", "scope")
+        closures_qs = CashClosure.objects.filter(
+            operational_date__gte=date_from,
+            operational_date__lte=date_to,
+            status=CashClosure.STATUS_CLOSED,
+        ).order_by("-operational_date", "scope")
         response["closures"] = CashClosureSerializer(closures_qs, many=True).data
         return Response(response)
 
@@ -561,7 +565,11 @@ class ExportXlsxView(APIView):
 
         course_qs = CourseEntry.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt).select_related("created_by")
         range_qs = RangeOrder.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt).select_related("created_by")
-        closures_qs = CashClosure.objects.filter(operational_date__gte=date_from, operational_date__lte=date_to)
+        closures_qs = CashClosure.objects.filter(
+            operational_date__gte=date_from,
+            operational_date__lte=date_to,
+            status=CashClosure.STATUS_CLOSED,
+        )
 
         output = BytesIO()
         workbook = xlsxwriter.Workbook(output, {"in_memory": True, "remove_timezone": True})
@@ -679,7 +687,10 @@ class ExportPdfView(APIView):
 
         operational_date = _parse_operational_date(request.query_params.get("operational_date"))
         totals = calculate_day_totals(operational_date)
-        closures = CashClosure.objects.filter(operational_date=operational_date).order_by("scope")
+        closures = CashClosure.objects.filter(
+            operational_date=operational_date,
+            status=CashClosure.STATUS_CLOSED,
+        ).order_by("scope")
 
         buffer = BytesIO()
         pdf = canvas.Canvas(buffer, pagesize=A4)

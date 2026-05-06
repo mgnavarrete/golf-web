@@ -104,6 +104,8 @@
   flex: 1;
   width: 100%;
   align-items: center;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .nav-item {
@@ -457,7 +459,8 @@
     position: fixed;
     top: 0;
     left: 0;
-    height: 100vh;
+    height: 100%; /* Fallback */
+    height: 100dvh;
     width: 280px;
     padding: 0;
     transform: translateX(-100%);
@@ -471,7 +474,8 @@
   }
 
   .sidebar-panel {
-    height: 100vh;
+    height: 100%; /* Fallback */
+    height: 100dvh;
     border-radius: 0;
     border-left: none;
     border-top: none;

@@ -2,49 +2,55 @@
   <div class="page">
     <div class="header">
       <h1>Cierre de Caja Diario</h1>
-      <div class="controls">
-        <DatePicker v-model="operationalDateObj" dateFormat="dd/mm/yy" showIcon />
-        <button class="btn btn-secondary" @click="load">Actualizar Día</button>
-      </div>
     </div>
 
-    <section class="card actions">
-      <button class="btn btn-primary" @click="closeScope('COURSE')" :disabled="loading">Cerrar Cancha</button>
-      <button class="btn btn-primary" @click="closeScope('RANGE')" :disabled="loading">Cerrar Driving Range</button>
-      <button class="btn btn-accent" @click="closeScope('FINAL')" :disabled="loading">Cierre Final</button>
+    <section class="card actions-grid">
+      <button class="btn btn-primary" :disabled="loading || !canCloseCourse" @click="openCloseModal('COURSE')">
+        Cerrar Cancha
+      </button>
+      <button class="btn btn-primary" :disabled="loading || !canCloseRange" @click="openCloseModal('RANGE')">
+        Cerrar Driving Range
+      </button>
+      <button class="btn btn-primary" :disabled="loading || !canCloseFinal" @click="openCloseModal('FINAL')">
+        Cierre Final
+      </button>
     </section>
 
     <section class="card">
       <h3>Estado del Día Seleccionado</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Área</th>
-            <th>Estado</th>
-            <th>Total General</th>
-            <th>Usuario Cierre</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="closure in closures" :key="closure.id">
-            <td>{{ closure.operational_date }}</td>
-            <td>{{ closure.scope }}</td>
-            <td>{{ closure.status }}</td>
-            <td>{{ formatClp(closure.total_general_clp) }}</td>
-            <td>{{ closure.closed_by_name }}</td>
-            <td>
-              <button v-if="canReopen && closure.status === 'CLOSED'" class="action" @click="reopen(closure.scope)">
-                Reabrir
-              </button>
-            </td>
-          </tr>
-          <tr v-if="closures.length === 0">
-            <td colspan="6" class="empty">No hay cierres para la fecha</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha Operativa</th>
+              <th>Área</th>
+              <th>Estado</th>
+              <th>Total General</th>
+              <th>Usuario</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="closure in closures" :key="closure.id">
+              <td>{{ closure.operational_date }}</td>
+              <td>{{ scopeLabel(closure.scope) }}</td>
+              <td><span class="badge closed">Cerrado</span></td>
+              <td class="font-medium">{{ formatClp(closure.total_general_clp) }}</td>
+              <td>{{ closure.closed_by_name }}</td>
+              <td class="actions-cell">
+                <button class="action" @click="openDetail(closure)">Ver</button>
+                <button v-if="canReopen" class="action danger" @click="askReopen(closure)">Reabrir</button>
+                <button class="action" @click="downloadExcel(closure.operational_date)">
+                  <i class="pi pi-file-excel"></i> Excel
+                </button>
+              </td>
+            </tr>
+            <tr v-if="closures.length === 0">
+              <td colspan="6" class="empty">No hay cierres para la fecha</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section class="card">
@@ -56,36 +62,38 @@
           <button class="btn btn-secondary" @click="loadHistory">Filtrar Historial</button>
         </div>
       </div>
-      <table style="margin-top: 16px;">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Área</th>
-            <th>Estado</th>
-            <th>Total General</th>
-            <th>Usuario Cierre</th>
-            <th>Descarga</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="closure in paginatedHistory" :key="closure.id">
-            <td>{{ formatDateLocal(closure.operational_date) }}</td>
-            <td>{{ closure.scope }}</td>
-            <td>{{ closure.status }}</td>
-            <td>{{ formatClp(closure.total_general_clp) }}</td>
-            <td>{{ closure.closed_by_name }}</td>
-            <td>
-              <button class="action" @click="downloadExcel(closure.operational_date)">
-                <i class="pi pi-file-excel"></i> Excel
-              </button>
-            </td>
-          </tr>
-          <tr v-if="historyClosures.length === 0">
-            <td colspan="6" class="empty">No hay historial para estas fechas</td>
-          </tr>
-        </tbody>
-      </table>
-      
+      <div class="table-responsive history-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Área</th>
+              <th>Estado</th>
+              <th>Total General</th>
+              <th>Usuario Cierre</th>
+              <th>Descarga</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="closure in paginatedHistory" :key="closure.id">
+              <td>{{ formatDateLocal(closure.operational_date) }}</td>
+              <td>{{ scopeLabel(closure.scope) }}</td>
+              <td>Cerrado</td>
+              <td>{{ formatClp(closure.total_general_clp) }}</td>
+              <td>{{ closure.closed_by_name }}</td>
+              <td class="actions-cell">
+                <button class="action" @click="downloadExcel(closure.operational_date)">
+                  <i class="pi pi-file-excel"></i> Excel
+                </button>
+              </td>
+            </tr>
+            <tr v-if="historyClosures.length === 0">
+              <td colspan="6" class="empty">No hay historial para estas fechas</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <div class="pagination" v-if="totalPages > 1">
         <button class="btn btn-secondary" :disabled="currentPage === 1" @click="currentPage--">
           <i class="pi pi-chevron-left"></i> Anterior
@@ -98,14 +106,71 @@
     </section>
 
     <p v-if="error" class="error">{{ error }}</p>
+
+    <ClosureFormModal
+      :visible="closeModalVisible"
+      :title="closeModalTitle"
+      :description="closeModalDescription"
+      :show-adjustment="closeModalScope === 'FINAL'"
+      confirm-label="Generar Cierre"
+      :loading="submittingClose"
+      @cancel="closeCloseModal"
+      @submit="submitClose"
+    />
+
+    <ConfirmActionModal
+      :visible="reopenTarget !== null"
+      title="Reabrir Cierre"
+      message="Esta acción eliminará el cierre actual y, si corresponde, también el cierre final del día."
+      confirm-label="Reabrir"
+      confirm-class="btn-danger"
+      :loading="submittingReopen"
+      @cancel="cancelReopen"
+      @confirm="confirmReopen"
+    />
+
+    <div v-if="detailClosure" class="modal-overlay" @click.self="detailClosure = null">
+      <div class="modal-container detail-modal">
+        <div class="modal-header">
+          <h3>Detalle de Cierre</h3>
+          <button class="modal-close" type="button" @click="detailClosure = null">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+        <div class="modal-body detail-grid">
+          <div><strong>Fecha:</strong> {{ detailClosure.operational_date }}</div>
+          <div><strong>Área:</strong> {{ scopeLabel(detailClosure.scope) }}</div>
+          <div><strong>Total Cancha:</strong> {{ formatClp(detailClosure.total_course_clp) }}</div>
+          <div><strong>Total Range:</strong> {{ formatClp(detailClosure.total_range_clp) }}</div>
+          <div><strong>Total General:</strong> {{ formatClp(detailClosure.total_general_clp) }}</div>
+          <div><strong>Efectivo:</strong> {{ formatClp(detailClosure.total_cash_clp) }}</div>
+          <div><strong>Tarjeta:</strong> {{ formatClp(detailClosure.total_card_clp) }}</div>
+          <div><strong>Transferencia:</strong> {{ formatClp(detailClosure.total_transfer_clp) }}</div>
+          <div><strong>Otro:</strong> {{ formatClp(detailClosure.total_other_clp) }}</div>
+          <div><strong>Personas:</strong> {{ detailClosure.total_people }}</div>
+          <div><strong>Canastos:</strong> {{ detailClosure.total_baskets }}</div>
+          <div><strong>Observaciones:</strong> {{ detailClosure.notes || "-" }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { closeDayScope, fetchClosuresStatus, reopenDayScope, fetchReportsRecords, buildExportXlsxUrl, downloadBinary, type CashClosure } from "@/services/golf";
+import {
+  closeDayScope,
+  fetchClosuresStatus,
+  reopenDayScope,
+  fetchReportsRecords,
+  buildExportXlsxUrl,
+  downloadBinary,
+  type CashClosure,
+} from "@/services/golf";
 import { useAuthStore } from "@/stores/auth";
-import DatePicker from 'primevue/datepicker';
+import DatePicker from "primevue/datepicker";
+import ConfirmActionModal from "@/components/modals/ConfirmActionModal.vue";
+import ClosureFormModal from "@/components/modals/ClosureFormModal.vue";
 
 const auth = useAuthStore();
 const canReopen = computed(() => auth.me?.permissions?.can_reopen_closure || auth.isAdmin);
@@ -114,6 +179,10 @@ const loading = ref(false);
 const error = ref("");
 const closures = ref<CashClosure[]>([]);
 const historyClosures = ref<CashClosure[]>([]);
+
+const canCloseCourse = ref(true);
+const canCloseRange = ref(true);
+const canCloseFinal = ref(true);
 
 const operationalDateObj = ref(new Date());
 
@@ -133,18 +202,28 @@ const paginatedHistory = computed(() => {
   return historyClosures.value.slice(start, start + itemsPerPage);
 });
 
-function formatDateForApi(d: any) {
+function formatDateForApi(d: Date | null) {
   if (!d) return "";
   const date = new Date(d);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function formatDateLocal(val: string) {
-  return new Date(val + "T00:00:00").toLocaleDateString("es-CL");
+  return new Date(`${val}T00:00:00`).toLocaleDateString("es-CL");
 }
 
 function formatClp(value: number) {
-  return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function scopeLabel(scope: "COURSE" | "RANGE" | "FINAL") {
+  if (scope === "COURSE") return "Cancha";
+  if (scope === "RANGE") return "Driving Range";
+  return "Final";
 }
 
 async function load() {
@@ -153,6 +232,9 @@ async function load() {
   try {
     const data = await fetchClosuresStatus(formatDateForApi(operationalDateObj.value));
     closures.value = data.closures;
+    canCloseCourse.value = data.can_close_course;
+    canCloseRange.value = data.can_close_range;
+    canCloseFinal.value = data.can_close_final;
   } catch (err: any) {
     error.value = err.response?.data?.detail || "No se pudo cargar cierres";
   } finally {
@@ -165,42 +247,98 @@ async function loadHistory() {
     const params: Record<string, string> = {
       date_from: formatDateForApi(historyFilters.value.date_from),
       date_to: formatDateForApi(historyFilters.value.date_to),
-      record_type: "NONE" as any, // Evita cargar course_entries y range_orders
+      record_type: "NONE",
     };
     const data = await fetchReportsRecords(params);
     historyClosures.value = data.closures;
     currentPage.value = 1;
   } catch (err: any) {
-    console.error("Error cargando historial de cierres:", err);
+    error.value = err.response?.data?.detail || "No se pudo cargar historial";
   }
 }
 
-async function closeScope(scope: "COURSE" | "RANGE" | "FINAL") {
-  const notes = prompt("Observaciones (opcional)") || "";
-  let adjustment = 0;
-  if (scope === "FINAL") {
-    const raw = prompt("Ajuste manual CLP (opcional)", "0");
-    adjustment = Number(raw || "0");
+const closeModalVisible = ref(false);
+const closeModalScope = ref<"COURSE" | "RANGE" | "FINAL">("COURSE");
+const submittingClose = ref(false);
+
+const closeModalTitle = computed(() => {
+  if (closeModalScope.value === "COURSE") return "Cerrar Cancha";
+  if (closeModalScope.value === "RANGE") return "Cerrar Driving Range";
+  return "Generar Cierre Final";
+});
+
+const closeModalDescription = computed(() => {
+  const date = formatDateForApi(operationalDateObj.value);
+  if (closeModalScope.value === "FINAL") {
+    return `Generarás el cierre final del día ${date}. Puedes agregar observaciones y ajuste manual.`;
   }
+  return `Generarás el cierre de ${scopeLabel(closeModalScope.value).toLowerCase()} para el día ${date}.`;
+});
+
+function openCloseModal(scope: "COURSE" | "RANGE" | "FINAL") {
+  closeModalScope.value = scope;
+  closeModalVisible.value = true;
+}
+
+function closeCloseModal() {
+  if (submittingClose.value) return;
+  closeModalVisible.value = false;
+}
+
+async function submitClose(payload: { notes: string; adjustment_clp: number }) {
+  submittingClose.value = true;
+  error.value = "";
   try {
-    await closeDayScope({ scope, operational_date: formatDateForApi(operationalDateObj.value), notes, adjustment_clp: adjustment });
-    await load();
-    await loadHistory();
+    await closeDayScope({
+      scope: closeModalScope.value,
+      operational_date: formatDateForApi(operationalDateObj.value),
+      notes: payload.notes,
+      adjustment_clp: closeModalScope.value === "FINAL" ? payload.adjustment_clp : 0,
+    });
+    closeModalVisible.value = false;
+    await Promise.all([load(), loadHistory()]);
   } catch (err: any) {
     error.value = err.response?.data?.detail || "No se pudo cerrar";
+  } finally {
+    submittingClose.value = false;
   }
 }
 
-async function reopen(scope: "COURSE" | "RANGE" | "FINAL") {
-  const reason = prompt("Motivo de reapertura");
-  if (!reason) return;
+const reopenTarget = ref<CashClosure | null>(null);
+const submittingReopen = ref(false);
+
+function askReopen(closure: CashClosure) {
+  reopenTarget.value = closure;
+}
+
+function cancelReopen() {
+  if (submittingReopen.value) return;
+  reopenTarget.value = null;
+}
+
+async function confirmReopen() {
+  if (!reopenTarget.value) return;
+
+  submittingReopen.value = true;
+  error.value = "";
   try {
-    await reopenDayScope({ scope, operational_date: formatDateForApi(operationalDateObj.value), reason });
-    await load();
-    await loadHistory();
+    await reopenDayScope({
+      scope: reopenTarget.value.scope,
+      operational_date: reopenTarget.value.operational_date,
+    });
+    reopenTarget.value = null;
+    await Promise.all([load(), loadHistory()]);
   } catch (err: any) {
     error.value = err.response?.data?.detail || "No se pudo reabrir";
+  } finally {
+    submittingReopen.value = false;
   }
+}
+
+const detailClosure = ref<CashClosure | null>(null);
+
+function openDetail(closure: CashClosure) {
+  detailClosure.value = closure;
 }
 
 async function downloadExcel(opDate: string) {
@@ -236,11 +374,6 @@ onMounted(() => {
   padding: 20px;
   box-shadow: var(--minttu-shadow-soft);
 }
-.actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
 input,
 :deep(.p-datepicker-input) {
   border: 1px solid var(--minttu-border);
@@ -249,6 +382,10 @@ input,
   color: var(--minttu-text);
   font-family: inherit;
   transition: all 0.2s ease;
+  width: 100%;
+}
+:deep(.p-datepicker) {
+  width: 100%;
 }
 input {
   padding: 10px 14px;
@@ -276,9 +413,15 @@ th {
   color: var(--minttu-primary);
   font-weight: 600;
 }
-th:first-child { border-top-left-radius: 8px; }
-th:last-child { border-top-right-radius: 8px; }
-tbody tr:hover { background-color: var(--minttu-bg); }
+th:first-child {
+  border-top-left-radius: 8px;
+}
+th:last-child {
+  border-top-right-radius: 8px;
+}
+tbody tr:hover {
+  background-color: var(--minttu-bg);
+}
 .action {
   border: none;
   background: var(--minttu-border);
@@ -288,9 +431,18 @@ tbody tr:hover { background-color: var(--minttu-bg); }
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
+  margin-right: 6px;
 }
 .action:hover {
   background: var(--minttu-primary);
+  color: var(--minttu-white);
+}
+.action.danger {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.action.danger:hover {
+  background: #dc2626;
   color: var(--minttu-white);
 }
 .empty {
@@ -314,11 +466,50 @@ tbody tr:hover { background-color: var(--minttu-bg); }
 .error {
   color: #c0392b;
 }
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge.closed {
+  background: #ecfdf3;
+  color: #166534;
+}
+.history-table {
+  margin-top: 16px;
+}
+.detail-modal {
+  max-width: 640px;
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  font-size: 14px;
+}
 
-@media (max-width: 1024px) {
-  .header {
+@media (max-width: 768px) {
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+  .controls {
     flex-direction: column;
     align-items: stretch;
+    width: 100%;
+  }
+  .controls > * {
+    width: 100%;
+  }
+  .detail-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

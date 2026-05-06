@@ -71,8 +71,8 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 
-import logoIcon from "@/assets/brand/aconcagua.png";
-import logoFull from "@/assets/brand/aconcagua.png";
+import logoIcon from "@/assets/brand/ico_dark.svg";
+import logoFull from "@/assets/brand/logo_dark.svg";
 import userIcon1 from "@/assets/images/user_icon/user_1.png";
 import userIcon2 from "@/assets/images/user_icon/user_2.png";
 import userIcon3 from "@/assets/images/user_icon/user_3.png";

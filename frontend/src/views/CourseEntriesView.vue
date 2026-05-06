@@ -11,44 +11,52 @@
     <section class="card filters">
       <DatePicker v-model="filters.date_from" dateFormat="dd/mm/yy" showIcon placeholder="Fecha Desde" />
       <DatePicker v-model="filters.date_to" dateFormat="dd/mm/yy" showIcon placeholder="Fecha Hasta" />
-      <Select v-model="filters.payment_method" :options="paymentOptions" optionLabel="label" optionValue="value" placeholder="Todos los pagos" />
+      <Select
+        v-model="filters.payment_method"
+        :options="paymentOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Todos los pagos"
+      />
       <button class="btn btn-secondary" @click="load">
         <i class="pi pi-filter"></i> Filtrar
       </button>
     </section>
 
     <section class="card">
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Nombre</th>
-            <th>Personas</th>
-            <th>Monto</th>
-            <th>Pago</th>
-            <th>Usuario</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in paginatedEntries" :key="item.id">
-            <td>{{ formatDate(item.created_at) }}</td>
-            <td>{{ item.customer_name }}</td>
-            <td>{{ item.people_count }}</td>
-            <td>{{ formatClp(item.amount_clp) }}</td>
-            <td>{{ paymentLabel(item.payment_method) }}</td>
-            <td>{{ item.created_by_name }}</td>
-            <td>
-              <button v-if="canEdit" class="action" @click="quickEdit(item)">Editar</button>
-              <button v-if="canDelete" class="action danger" @click="remove(item.id)">Eliminar</button>
-            </td>
-          </tr>
-          <tr v-if="entries.length === 0">
-            <td colspan="7" class="empty">Sin registros</td>
-          </tr>
-        </tbody>
-      </table>
-      
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Nombre</th>
+              <th>Personas</th>
+              <th>Monto</th>
+              <th>Pago</th>
+              <th>Usuario</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in paginatedEntries" :key="item.id">
+              <td>{{ formatDate(item.created_at) }}</td>
+              <td>{{ item.customer_name }}</td>
+              <td>{{ item.people_count }}</td>
+              <td>{{ formatClp(item.amount_clp) }}</td>
+              <td>{{ paymentLabel(item.payment_method) }}</td>
+              <td>{{ item.created_by_name }}</td>
+              <td class="actions-cell">
+                <button v-if="canEdit" class="action" @click="quickEdit(item)">Editar</button>
+                <button v-if="canDelete" class="action danger" @click="askRemove(item.id)">Eliminar</button>
+              </td>
+            </tr>
+            <tr v-if="entries.length === 0">
+              <td colspan="7" class="empty">Sin registros</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <div class="pagination" v-if="totalPages > 1">
         <button class="btn btn-secondary" :disabled="currentPage === 1" @click="currentPage--">
           <i class="pi pi-chevron-left"></i> Anterior
@@ -61,25 +69,63 @@
     </section>
 
     <p v-if="error" class="error">{{ error }}</p>
+
+    <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
+      <div class="modal-container record-modal">
+        <div class="modal-header">
+          <h3>Editar Registro de Cancha</h3>
+          <button class="modal-close" :disabled="editing" @click="closeEditModal"><i class="pi pi-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <CourseEntryForm
+            :initial-entry="editForm"
+            :saving="editing"
+            :error="editError"
+            submit-label="Guardar Cambios"
+            show-cancel
+            @cancel="closeEditModal"
+            @submit="saveEditModal"
+          />
+        </div>
+      </div>
+    </div>
+
+    <ConfirmActionModal
+      :visible="deleteTargetId !== null"
+      title="Eliminar Registro"
+      message="¿Seguro que deseas eliminar este registro de cancha? Esta acción no se puede deshacer."
+      confirm-label="Eliminar"
+      confirm-class="btn-danger"
+      :loading="deleting"
+      @cancel="cancelRemove"
+      @confirm="confirmRemove"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { createCourseEntry, deleteCourseEntry, listCourseEntries, updateCourseEntry, type CourseEntry } from "@/services/golf";
+import {
+  deleteCourseEntry,
+  listCourseEntries,
+  updateCourseEntry,
+  type CourseEntry,
+  type CourseEntryPayload,
+} from "@/services/golf";
 import { useAuthStore } from "@/stores/auth";
-
-import DatePicker from 'primevue/datepicker';
-import Select from 'primevue/select';
+import CourseEntryForm from "@/components/forms/CourseEntryForm.vue";
+import ConfirmActionModal from "@/components/modals/ConfirmActionModal.vue";
+import DatePicker from "primevue/datepicker";
+import Select from "primevue/select";
 
 const auth = useAuthStore();
 
 const paymentOptions = [
-  { label: 'Todos los pagos', value: '' },
-  { label: 'Efectivo', value: 'CASH' },
-  { label: 'Tarjeta', value: 'CARD' },
-  { label: 'Transferencia', value: 'TRANSFER' },
-  { label: 'Otro', value: 'OTHER' }
+  { label: "Todos los pagos", value: "" },
+  { label: "Efectivo", value: "CASH" },
+  { label: "Tarjeta", value: "CARD" },
+  { label: "Transferencia", value: "TRANSFER" },
+  { label: "Otro", value: "OTHER" },
 ];
 
 const error = ref("");
@@ -118,10 +164,10 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString("es-CL", { hour12: false });
 }
 
-function formatDateForApi(d: any) {
+function formatDateForApi(d: Date | null) {
   if (!d) return "";
   const date = new Date(d);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 async function load() {
@@ -138,26 +184,74 @@ async function load() {
   }
 }
 
-async function quickEdit(item: CourseEntry) {
-  const amount = prompt("Nuevo monto CLP", String(item.amount_clp));
-  if (!amount) return;
-  const nextAmount = Number(amount);
-  if (Number.isNaN(nextAmount)) return;
+const showEditModal = ref(false);
+const editForm = ref<Partial<CourseEntryPayload> | null>(null);
+const editId = ref<number | null>(null);
+const editing = ref(false);
+const editError = ref("");
+
+function quickEdit(item: CourseEntry) {
+  editId.value = item.id;
+  editError.value = "";
+  editForm.value = {
+    customer_name: item.customer_name,
+    people_count: item.people_count,
+    amount_clp: item.amount_clp,
+    payment_method: item.payment_method,
+    notes: item.notes,
+  };
+  showEditModal.value = true;
+}
+
+function closeEditModal() {
+  if (editing.value) return;
+  showEditModal.value = false;
+  editId.value = null;
+  editForm.value = null;
+  editError.value = "";
+}
+
+async function saveEditModal(payload: CourseEntryPayload) {
+  if (!editId.value) return;
+  editing.value = true;
+  editError.value = "";
   try {
-    await updateCourseEntry(item.id, { amount_clp: nextAmount });
+    await updateCourseEntry(editId.value, payload);
     await load();
+    editing.value = false;
+    closeEditModal();
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "No se pudo editar";
+    editError.value = err.response?.data?.detail || "No se pudo editar el registro";
+  } finally {
+    editing.value = false;
   }
 }
 
-async function remove(id: number) {
-  if (!confirm("¿Eliminar registro?")) return;
+const deleteTargetId = ref<number | null>(null);
+const deleting = ref(false);
+
+function askRemove(id: number) {
+  deleteTargetId.value = id;
+}
+
+function cancelRemove() {
+  if (deleting.value) return;
+  deleteTargetId.value = null;
+}
+
+async function confirmRemove() {
+  if (!deleteTargetId.value) return;
+
+  deleting.value = true;
+  error.value = "";
   try {
-    await deleteCourseEntry(id);
+    await deleteCourseEntry(deleteTargetId.value);
+    deleteTargetId.value = null;
     await load();
   } catch (err: any) {
     error.value = err.response?.data?.detail || "No se pudo eliminar";
+  } finally {
+    deleting.value = false;
   }
 }
 
@@ -259,11 +353,11 @@ tbody tr:hover {
   color: var(--minttu-white);
 }
 .action.danger {
-  background: #FEF2F2;
-  color: #DC2626;
+  background: #fef2f2;
+  color: #dc2626;
 }
 .action.danger:hover {
-  background: #DC2626;
+  background: #dc2626;
   color: var(--minttu-white);
 }
 .empty {
@@ -286,6 +380,9 @@ tbody tr:hover {
 }
 .error {
   color: #c0392b;
+}
+.record-modal {
+  max-width: 600px;
 }
 
 @media (max-width: 1024px) {

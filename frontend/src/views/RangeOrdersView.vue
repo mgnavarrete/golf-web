@@ -11,46 +11,54 @@
     <section class="card filters">
       <DatePicker v-model="filters.date_from" dateFormat="dd/mm/yy" showIcon placeholder="Fecha Desde" />
       <DatePicker v-model="filters.date_to" dateFormat="dd/mm/yy" showIcon placeholder="Fecha Hasta" />
-      <Select v-model="filters.payment_method" :options="paymentOptions" optionLabel="label" optionValue="value" placeholder="Todos los pagos" />
+      <Select
+        v-model="filters.payment_method"
+        :options="paymentOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Todos los pagos"
+      />
       <button class="btn btn-secondary" @click="load">
         <i class="pi pi-filter"></i> Filtrar
       </button>
     </section>
 
     <section class="card">
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Nombre</th>
-            <th>Canastos</th>
-            <th>Unitario</th>
-            <th>Total</th>
-            <th>Pago</th>
-            <th>Usuario</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in paginatedEntries" :key="item.id">
-            <td>{{ formatDate(item.created_at) }}</td>
-            <td>{{ item.customer_name }}</td>
-            <td>{{ item.baskets_count }}</td>
-            <td>{{ formatClp(item.unit_price_clp) }}</td>
-            <td>{{ formatClp(item.total_amount_clp) }}</td>
-            <td>{{ paymentLabel(item.payment_method) }}</td>
-            <td>{{ item.created_by_name }}</td>
-            <td>
-              <button v-if="canEdit" class="action" @click="quickEdit(item)">Editar</button>
-              <button v-if="canDelete" class="action danger" @click="remove(item.id)">Eliminar</button>
-            </td>
-          </tr>
-          <tr v-if="orders.length === 0">
-            <td colspan="8" class="empty">Sin pedidos</td>
-          </tr>
-        </tbody>
-      </table>
-      
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Nombre</th>
+              <th>Canastos</th>
+              <th>Valor Unit.</th>
+              <th>Total Cobrado</th>
+              <th>Pago</th>
+              <th>Notas</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in paginatedEntries" :key="item.id">
+              <td>{{ formatDate(item.created_at) }}</td>
+              <td>{{ item.customer_name }}</td>
+              <td>{{ item.baskets_count }}</td>
+              <td>{{ formatClp(item.unit_price_clp) }}</td>
+              <td>{{ formatClp(item.total_amount_clp) }}</td>
+              <td>{{ paymentLabel(item.payment_method) }}</td>
+              <td>{{ item.notes }}</td>
+              <td class="actions-cell">
+                <button v-if="canEdit" class="action" @click="quickEdit(item)">Editar</button>
+                <button v-if="canDelete" class="action danger" @click="askRemove(item.id)">Eliminar</button>
+              </td>
+            </tr>
+            <tr v-if="orders.length === 0">
+              <td colspan="8" class="empty">Sin pedidos</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <div class="pagination" v-if="totalPages > 1">
         <button class="btn btn-secondary" :disabled="currentPage === 1" @click="currentPage--">
           <i class="pi pi-chevron-left"></i> Anterior
@@ -63,32 +71,63 @@
     </section>
 
     <p v-if="error" class="error">{{ error }}</p>
+
+    <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
+      <div class="modal-container record-modal">
+        <div class="modal-header">
+          <h3>Editar Pedido de Range</h3>
+          <button class="modal-close" :disabled="editing" @click="closeEditModal"><i class="pi pi-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <RangeOrderForm
+            :initial-order="editForm"
+            :saving="editing"
+            :error="editError"
+            submit-label="Guardar Cambios"
+            show-cancel
+            @cancel="closeEditModal"
+            @submit="saveEditModal"
+          />
+        </div>
+      </div>
+    </div>
+
+    <ConfirmActionModal
+      :visible="deleteTargetId !== null"
+      title="Eliminar Pedido"
+      message="¿Seguro que deseas eliminar este pedido de range? Esta acción no se puede deshacer."
+      confirm-label="Eliminar"
+      confirm-class="btn-danger"
+      :loading="deleting"
+      @cancel="cancelRemove"
+      @confirm="confirmRemove"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import {
-  createRangeOrder,
   deleteRangeOrder,
-  getBusinessSettings,
   listRangeOrders,
   updateRangeOrder,
   type RangeOrder,
+  type RangeOrderPayload,
 } from "@/services/golf";
 import { useAuthStore } from "@/stores/auth";
-
-import DatePicker from 'primevue/datepicker';
-import Select from 'primevue/select';
+import ConfirmActionModal from "@/components/modals/ConfirmActionModal.vue";
+import RangeOrderForm from "@/components/forms/RangeOrderForm.vue";
+import DatePicker from "primevue/datepicker";
+import Select from "primevue/select";
 
 const auth = useAuthStore();
 
 const paymentOptions = [
-  { label: 'Todos los pagos', value: '' },
-  { label: 'Efectivo', value: 'CASH' },
-  { label: 'Tarjeta', value: 'CARD' },
-  { label: 'Transferencia', value: 'TRANSFER' },
-  { label: 'Otro', value: 'OTHER' }
+  { label: "Todos los pagos", value: "" },
+  { label: "Efectivo", value: "CASH" },
+  { label: "Tarjeta", value: "CARD" },
+  { label: "Transferencia", value: "TRANSFER" },
+  { label: "Otro", value: "OTHER" },
 ];
 
 const error = ref("");
@@ -127,10 +166,10 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString("es-CL", { hour12: false });
 }
 
-function formatDateForApi(d: any) {
+function formatDateForApi(d: Date | null) {
   if (!d) return "";
   const date = new Date(d);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 async function load() {
@@ -147,42 +186,79 @@ async function load() {
   }
 }
 
-async function loadDefaultPrice() {
-  try {
-    const settings = await getBusinessSettings();
-    form.value.unit_price_clp = settings.default_range_unit_price_clp;
-  } catch {
-    // ignore
-  }
+const showEditModal = ref(false);
+const editForm = ref<Partial<RangeOrderPayload> | null>(null);
+const editId = ref<number | null>(null);
+const editing = ref(false);
+const editError = ref("");
+
+function quickEdit(item: RangeOrder) {
+  editId.value = item.id;
+  editError.value = "";
+  editForm.value = {
+    customer_name: item.customer_name,
+    baskets_count: item.baskets_count,
+    unit_price_clp: item.unit_price_clp,
+    total_amount_clp: item.total_amount_clp,
+    payment_method: item.payment_method,
+    notes: item.notes,
+  };
+  showEditModal.value = true;
 }
 
-async function quickEdit(item: RangeOrder) {
-  const unit = prompt("Nuevo valor unitario CLP", String(item.unit_price_clp));
-  if (!unit) return;
-  const nextUnit = Number(unit);
-  if (Number.isNaN(nextUnit)) return;
+function closeEditModal() {
+  if (editing.value) return;
+  showEditModal.value = false;
+  editId.value = null;
+  editForm.value = null;
+  editError.value = "";
+}
+
+async function saveEditModal(payload: RangeOrderPayload) {
+  if (!editId.value) return;
+  editing.value = true;
+  editError.value = "";
   try {
-    await updateRangeOrder(item.id, { unit_price_clp: nextUnit });
+    await updateRangeOrder(editId.value, payload);
     await load();
+    editing.value = false;
+    closeEditModal();
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "No se pudo editar";
+    editError.value = err.response?.data?.detail || "No se pudo editar el pedido";
+  } finally {
+    editing.value = false;
   }
 }
 
-async function remove(id: number) {
-  if (!confirm("¿Eliminar pedido?")) return;
+const deleteTargetId = ref<number | null>(null);
+const deleting = ref(false);
+
+function askRemove(id: number) {
+  deleteTargetId.value = id;
+}
+
+function cancelRemove() {
+  if (deleting.value) return;
+  deleteTargetId.value = null;
+}
+
+async function confirmRemove() {
+  if (!deleteTargetId.value) return;
+
+  deleting.value = true;
+  error.value = "";
   try {
-    await deleteRangeOrder(id);
+    await deleteRangeOrder(deleteTargetId.value);
+    deleteTargetId.value = null;
     await load();
   } catch (err: any) {
     error.value = err.response?.data?.detail || "No se pudo eliminar";
+  } finally {
+    deleting.value = false;
   }
 }
 
-onMounted(async () => {
-  await loadDefaultPrice();
-  await load();
-});
+onMounted(load);
 </script>
 
 <style scoped>
@@ -280,11 +356,11 @@ tbody tr:hover {
   color: var(--minttu-white);
 }
 .action.danger {
-  background: #FEF2F2;
-  color: #DC2626;
+  background: #fef2f2;
+  color: #dc2626;
 }
 .action.danger:hover {
-  background: #DC2626;
+  background: #dc2626;
   color: var(--minttu-white);
 }
 .empty {
@@ -307,6 +383,9 @@ tbody tr:hover {
 }
 .error {
   color: #c0392b;
+}
+.record-modal {
+  max-width: 600px;
 }
 
 @media (max-width: 1024px) {

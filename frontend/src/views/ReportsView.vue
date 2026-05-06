@@ -55,33 +55,35 @@
 
     <section class="card">
       <h3>Registros filtrados</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Tipo</th>
-            <th>Fecha</th>
-            <th>Nombre</th>
-            <th>Cantidad</th>
-            <th>Monto</th>
-            <th>Pago</th>
-            <th>Usuario</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in paginatedRows" :key="row.key">
-            <td>{{ row.type }}</td>
-            <td>{{ row.date }}</td>
-            <td>{{ row.name }}</td>
-            <td>{{ row.qty }}</td>
-            <td>{{ formatClp(row.amount) }}</td>
-            <td>{{ paymentLabel(row.payment) }}</td>
-            <td>{{ row.user }}</td>
-          </tr>
-          <tr v-if="flatRows.length === 0">
-            <td colspan="7" class="empty">Sin datos para filtros aplicados</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Fecha</th>
+              <th>Nombre</th>
+              <th>Cantidad</th>
+              <th>Monto</th>
+              <th>Pago</th>
+              <th>Usuario</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in paginatedRows" :key="row.key">
+              <td>{{ row.type }}</td>
+              <td>{{ row.date }}</td>
+              <td>{{ row.name }}</td>
+              <td>{{ row.qty }}</td>
+              <td>{{ formatClp(row.amount) }}</td>
+              <td>{{ paymentLabel(row.payment) }}</td>
+              <td>{{ row.user }}</td>
+            </tr>
+            <tr v-if="flatRows.length === 0">
+              <td colspan="7" class="empty">Sin datos para filtros aplicados</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       
       <div class="pagination" v-if="totalPages > 1">
         <button class="btn btn-secondary" :disabled="currentPage === 1" @click="currentPage--">
