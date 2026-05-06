@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 
 export type PaymentMethod = "CASH" | "CARD" | "TRANSFER" | "OTHER";
+export type ClosureScope = "COURSE" | "RANGE" | "FINAL";
 
 export interface AppPermissions {
   can_view_dashboard: boolean;
@@ -75,7 +76,7 @@ export interface DailySummary {
 export interface CashClosure {
   id: number;
   operational_date: string;
-  scope: "COURSE" | "RANGE" | "FINAL";
+  scope: ClosureScope;
   status: "CLOSED";
   total_course_clp: number;
   total_range_clp: number;
@@ -106,6 +107,21 @@ export interface ClosuresStatusResponse {
   can_close_course: boolean;
   can_close_range: boolean;
   can_close_final: boolean;
+  summaries: Record<ClosureScope, ClosureSummary>;
+}
+
+export interface ClosureSummary {
+  total_course_clp: number;
+  total_range_clp: number;
+  total_general_clp: number;
+  total_cash_clp: number;
+  total_card_clp: number;
+  total_transfer_clp: number;
+  total_other_clp: number;
+  total_people: number;
+  total_course_records: number;
+  total_range_orders: number;
+  total_baskets: number;
 }
 
 export interface ReportsSummaryResponse {
@@ -220,7 +236,7 @@ export async function fetchClosuresStatus(operationalDate?: string): Promise<Clo
 }
 
 export async function closeDayScope(payload: {
-  scope: "COURSE" | "RANGE" | "FINAL";
+  scope: ClosureScope;
   operational_date?: string;
   notes?: string;
   adjustment_clp?: number;
@@ -230,7 +246,7 @@ export async function closeDayScope(payload: {
 }
 
 export async function reopenDayScope(payload: {
-  scope: "COURSE" | "RANGE" | "FINAL";
+  scope: ClosureScope;
   operational_date?: string;
 }) {
   const { data } = await api.post<ReopenScopeResponse>("/api/closures/reopen/", payload);

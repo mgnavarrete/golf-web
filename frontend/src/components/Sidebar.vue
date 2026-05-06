@@ -22,7 +22,14 @@
           :title="item.label"
           @click="emit('close-mobile')"
         >
-          <i :class="item.icon"></i>
+          <span
+            v-if="item.materialIcon"
+            class="material-symbols-outlined nav-material-icon"
+            aria-hidden="true"
+          >
+            {{ item.materialIcon }}
+          </span>
+          <i v-else :class="item.icon"></i>
           <span class="nav-label">{{ item.label }}</span>
         </RouterLink>
       </nav>
@@ -90,7 +97,8 @@ import "@/styles/utilities/transitions.css";
 interface MenuItem {
   path: string;
   label: string;
-  icon: string;
+  icon?: string;
+  materialIcon?: string;
 }
 
 const props = defineProps<{
@@ -125,19 +133,19 @@ const menuItems = computed<MenuItem[]>(() => {
   const items: MenuItem[] = [];
 
   if (permissions?.can_view_dashboard) {
-    items.push({ path: "/", label: "Inicio", icon: "pi pi-home" });
+    items.push({ path: "/", label: "Inicio", materialIcon: "home" });
   }
   if (permissions?.can_manage_course_entries) {
-    items.push({ path: "/course-entries", label: "Entradas Cancha", icon: "pi pi-flag" });
+    items.push({ path: "/course-entries", label: "Entradas Cancha", materialIcon: "golf_course" });
   }
   if (permissions?.can_manage_range_orders) {
-    items.push({ path: "/range-orders", label: "Driving Range", icon: "pi pi-circle" });
+    items.push({ path: "/range-orders", label: "Driving Range", materialIcon: "sports_golf" });
   }
   if (permissions?.can_close_day) {
-    items.push({ path: "/closures", label: "Cierre Caja", icon: "pi pi-wallet" });
+    items.push({ path: "/closures", label: "Cierre Caja", materialIcon: "point_of_sale" });
   }
   if (permissions?.can_view_reports) {
-    items.push({ path: "/reports", label: "Reportes", icon: "pi pi-chart-line" });
+    items.push({ path: "/reports", label: "Reportes", materialIcon: "analytics" });
   }
 
   return items;

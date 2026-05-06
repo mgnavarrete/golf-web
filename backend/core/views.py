@@ -20,6 +20,8 @@ from .models import (
     CourseEntry,
     PaymentMethod,
     RangeOrder,
+    calculate_scope_totals,
+    combine_closure_totals,
     calculate_day_totals,
 )
 from .permissions import require_app_permission
@@ -89,22 +91,26 @@ def _assert_creation_allowed(scope: str, operational_date: date | None = None):
         raise ValidationError({"detail": "No se pueden crear registros: el día está cerrado"})
 
 
-def _per_user_totals(operational_date: date):
+def _per_user_totals(operational_date: date, scope: str = CashClosure.SCOPE_FINAL):
     start_dt, end_dt = _day_bounds(operational_date)
 
     user_map = defaultdict(lambda: {"course_clp": 0, "range_clp": 0, "total_clp": 0})
 
-    course_rows = (
-        CourseEntry.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt)
-        .values("created_by", "created_by__email", "created_by__first_name", "created_by__last_name")
-        .annotate(total=Sum("amount_clp"))
-    )
+    course_rows = []
+    if scope in [CashClosure.SCOPE_COURSE, CashClosure.SCOPE_FINAL]:
+        course_rows = (
+            CourseEntry.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt)
+            .values("created_by", "created_by__email", "created_by__first_name", "created_by__last_name")
+            .annotate(total=Sum("amount_clp"))
+        )
 
-    range_rows = (
-        RangeOrder.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt)
-        .values("created_by", "created_by__email", "created_by__first_name", "created_by__last_name")
-        .annotate(total=Sum("total_amount_clp"))
-    )
+    range_rows = []
+    if scope in [CashClosure.SCOPE_RANGE, CashClosure.SCOPE_FINAL]:
+        range_rows = (
+            RangeOrder.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt)
+            .values("created_by", "created_by__email", "created_by__first_name", "created_by__last_name")
+            .annotate(total=Sum("total_amount_clp"))
+        )
 
     for row in course_rows:
         key = str(row["created_by"])
@@ -278,12 +284,26 @@ class CashClosuresStatusView(APIView):
             operational_date=operational_date,
             status=CashClosure.STATUS_CLOSED,
         ).order_by("scope")
+        course_closure = next((closure for closure in closures if closure.scope == CashClosure.SCOPE_COURSE), None)
+        range_closure = next((closure for closure in closures if closure.scope == CashClosure.SCOPE_RANGE), None)
+        final_closure = next((closure for closure in closures if closure.scope == CashClosure.SCOPE_FINAL), None)
+
+        final_summary = (
+            combine_closure_totals(course_closure, range_closure)
+            if course_closure and range_closure
+            else calculate_scope_totals(operational_date, CashClosure.SCOPE_FINAL)
+        )
         data = {
             "operational_date": str(operational_date),
             "closures": CashClosureSerializer(closures, many=True).data,
             "can_close_course": not _is_scope_closed(operational_date, CashClosure.SCOPE_COURSE),
             "can_close_range": not _is_scope_closed(operational_date, CashClosure.SCOPE_RANGE),
-            "can_close_final": not _is_scope_closed(operational_date, CashClosure.SCOPE_FINAL),
+            "can_close_final": bool(course_closure and range_closure and not final_closure),
+            "summaries": {
+                CashClosure.SCOPE_COURSE: calculate_scope_totals(operational_date, CashClosure.SCOPE_COURSE),
+                CashClosure.SCOPE_RANGE: calculate_scope_totals(operational_date, CashClosure.SCOPE_RANGE),
+                CashClosure.SCOPE_FINAL: final_summary,
+            },
         }
         return Response(data)
 
@@ -317,17 +337,27 @@ class CashCloseView(APIView):
         if existing:
             raise ValidationError({"detail": "Este cierre ya fue generado"})
 
+        course_closure = None
+        range_closure = None
         if scope == CashClosure.SCOPE_FINAL:
             for required_scope in [CashClosure.SCOPE_COURSE, CashClosure.SCOPE_RANGE]:
-                if not CashClosure.objects.filter(
+                required_closure = CashClosure.objects.filter(
                     operational_date=operational_date,
                     scope=required_scope,
                     status=CashClosure.STATUS_CLOSED,
-                ).exists():
+                ).first()
+                if not required_closure:
                     raise ValidationError({"detail": "Debes cerrar cancha y range antes del cierre final"})
+                if required_scope == CashClosure.SCOPE_COURSE:
+                    course_closure = required_closure
+                else:
+                    range_closure = required_closure
 
-        totals = calculate_day_totals(operational_date)
-        totals["total_general_clp"] += adjustment_clp
+        if scope == CashClosure.SCOPE_FINAL:
+            totals = combine_closure_totals(course_closure, range_closure, adjustment_clp)
+        else:
+            adjustment_clp = 0
+            totals = calculate_scope_totals(operational_date, scope)
 
         # Limpia cierres legacy reabiertos para mantener flujo único de cierre activo.
         CashClosure.objects.filter(
@@ -342,7 +372,7 @@ class CashCloseView(APIView):
             notes=notes,
             status=CashClosure.STATUS_CLOSED,
             closed_by=request.user,
-            per_user_totals=_per_user_totals(operational_date),
+            per_user_totals=_per_user_totals(operational_date, scope),
             **totals,
         )
 
@@ -538,6 +568,7 @@ class ReportsRecordsView(APIView):
             operational_date__gte=date_from,
             operational_date__lte=date_to,
             status=CashClosure.STATUS_CLOSED,
+            scope=CashClosure.SCOPE_FINAL,
         ).order_by("-operational_date", "scope")
         response["closures"] = CashClosureSerializer(closures_qs, many=True).data
         return Response(response)
@@ -569,6 +600,7 @@ class ExportXlsxView(APIView):
             operational_date__gte=date_from,
             operational_date__lte=date_to,
             status=CashClosure.STATUS_CLOSED,
+            scope=CashClosure.SCOPE_FINAL,
         )
 
         output = BytesIO()
@@ -690,6 +722,7 @@ class ExportPdfView(APIView):
         closures = CashClosure.objects.filter(
             operational_date=operational_date,
             status=CashClosure.STATUS_CLOSED,
+            scope=CashClosure.SCOPE_FINAL,
         ).order_by("scope")
 
         buffer = BytesIO()

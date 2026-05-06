@@ -11,6 +11,35 @@
       <div class="modal-body">
         <p v-if="description" class="modal-description">{{ description }}</p>
 
+        <section v-if="summary" class="summary-panel">
+          <div class="summary-grid">
+            <div v-for="item in metricRows" :key="item.label" class="summary-item">
+              <span>{{ item.label }}</span>
+              <strong>{{ item.value }}</strong>
+            </div>
+          </div>
+
+          <div class="payment-breakdown">
+            <h4>Desglose por método de pago</h4>
+            <div class="payment-row">
+              <span>Efectivo</span>
+              <strong>{{ formatClp(summary.total_cash_clp) }}</strong>
+            </div>
+            <div class="payment-row">
+              <span>Tarjeta</span>
+              <strong>{{ formatClp(summary.total_card_clp) }}</strong>
+            </div>
+            <div class="payment-row">
+              <span>Transferencia</span>
+              <strong>{{ formatClp(summary.total_transfer_clp) }}</strong>
+            </div>
+            <div class="payment-row">
+              <span>Otro</span>
+              <strong>{{ formatClp(summary.total_other_clp) }}</strong>
+            </div>
+          </div>
+        </section>
+
         <div class="form-group">
           <label for="closure-notes">{{ notesLabel }}</label>
           <textarea
@@ -51,7 +80,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
+import type { ClosureScope, ClosureSummary } from "@/services/golf";
 
 const props = withDefaults(
   defineProps<{
@@ -61,6 +91,8 @@ const props = withDefaults(
     confirmLabel?: string;
     cancelLabel?: string;
     loading?: boolean;
+    scope?: ClosureScope;
+    summary?: ClosureSummary | null;
     notesLabel?: string;
     notesPlaceholder?: string;
     showAdjustment?: boolean;
@@ -74,6 +106,8 @@ const props = withDefaults(
     confirmLabel: "Confirmar",
     cancelLabel: "Cancelar",
     loading: false,
+    scope: "FINAL",
+    summary: null,
     notesLabel: "Observaciones (opcional)",
     notesPlaceholder: "Escribe una observación",
     showAdjustment: false,
@@ -92,6 +126,58 @@ const emit = defineEmits<{
 const notes = ref("");
 const adjustmentInput = ref("0");
 const localError = ref("");
+
+const metricRows = computed(() => {
+  if (!props.summary) return [];
+  const summary = props.summary;
+
+  if (props.scope === "COURSE") {
+    return [
+      { label: "Total pagado", value: formatClp(summary.total_course_clp) },
+      { label: "Personas", value: formatNumber(summary.total_people) },
+      { label: "Registros", value: formatNumber(summary.total_course_records) },
+      { label: "Promedio por persona", value: formatClp(average(summary.total_course_clp, summary.total_people)) },
+      { label: "Promedio por registro", value: formatClp(average(summary.total_course_clp, summary.total_course_records)) },
+    ];
+  }
+
+  if (props.scope === "RANGE") {
+    return [
+      { label: "Total pagado", value: formatClp(summary.total_range_clp) },
+      { label: "Canastos", value: formatNumber(summary.total_baskets) },
+      { label: "Pedidos", value: formatNumber(summary.total_range_orders) },
+      { label: "Promedio por canasto", value: formatClp(average(summary.total_range_clp, summary.total_baskets)) },
+      { label: "Promedio por pedido", value: formatClp(average(summary.total_range_clp, summary.total_range_orders)) },
+    ];
+  }
+
+  return [
+    { label: "Total general", value: formatClp(summary.total_general_clp) },
+    { label: "Total cancha", value: formatClp(summary.total_course_clp) },
+    { label: "Total range", value: formatClp(summary.total_range_clp) },
+    { label: "Personas", value: formatNumber(summary.total_people) },
+    { label: "Canastos", value: formatNumber(summary.total_baskets) },
+    { label: "Registros cancha", value: formatNumber(summary.total_course_records) },
+    { label: "Pedidos range", value: formatNumber(summary.total_range_orders) },
+  ];
+});
+
+function average(total: number, count: number) {
+  if (!count) return 0;
+  return total / count;
+}
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 }).format(value || 0);
+}
+
+function formatClp(value: number) {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
 
 function resetState() {
   notes.value = props.initialNotes;
@@ -139,6 +225,60 @@ function handleSubmit() {
   font-size: 14px;
 }
 
+.summary-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid var(--minttu-border);
+  border-radius: var(--minttu-radius-md);
+  background: var(--minttu-bg);
+  padding: 14px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.summary-item span,
+.payment-row span {
+  color: var(--minttu-gray);
+  font-size: 12px;
+}
+
+.summary-item strong,
+.payment-row strong {
+  color: var(--minttu-primary);
+  font-size: 14px;
+}
+
+.payment-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--minttu-border);
+  padding-top: 12px;
+}
+
+.payment-breakdown h4 {
+  margin: 0;
+  color: var(--minttu-primary);
+  font-size: 13px;
+}
+
+.payment-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -173,5 +313,11 @@ function handleSubmit() {
 .error {
   margin: 0;
   color: #c0392b;
+}
+
+@media (max-width: 520px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

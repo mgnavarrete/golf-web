@@ -40,7 +40,7 @@
               <td class="actions-cell">
                 <button class="action" @click="openDetail(closure)">Ver</button>
                 <button v-if="canReopen" class="action danger" @click="askReopen(closure)">Reabrir</button>
-                <button class="action" @click="downloadExcel(closure.operational_date)">
+                <button v-if="closure.scope === 'FINAL'" class="action" @click="downloadExcel(closure.operational_date)">
                   <i class="pi pi-file-excel"></i> Excel
                 </button>
               </td>
@@ -111,6 +111,8 @@
       :visible="closeModalVisible"
       :title="closeModalTitle"
       :description="closeModalDescription"
+      :scope="closeModalScope"
+      :summary="closeModalSummary"
       :show-adjustment="closeModalScope === 'FINAL'"
       confirm-label="Generar Cierre"
       :loading="submittingClose"
@@ -140,15 +142,26 @@
         <div class="modal-body detail-grid">
           <div><strong>Fecha:</strong> {{ detailClosure.operational_date }}</div>
           <div><strong>Área:</strong> {{ scopeLabel(detailClosure.scope) }}</div>
-          <div><strong>Total Cancha:</strong> {{ formatClp(detailClosure.total_course_clp) }}</div>
-          <div><strong>Total Range:</strong> {{ formatClp(detailClosure.total_range_clp) }}</div>
+          <div v-if="detailClosure.scope !== 'RANGE'"><strong>Total Cancha:</strong> {{ formatClp(detailClosure.total_course_clp) }}</div>
+          <div v-if="detailClosure.scope !== 'COURSE'"><strong>Total Range:</strong> {{ formatClp(detailClosure.total_range_clp) }}</div>
           <div><strong>Total General:</strong> {{ formatClp(detailClosure.total_general_clp) }}</div>
           <div><strong>Efectivo:</strong> {{ formatClp(detailClosure.total_cash_clp) }}</div>
           <div><strong>Tarjeta:</strong> {{ formatClp(detailClosure.total_card_clp) }}</div>
           <div><strong>Transferencia:</strong> {{ formatClp(detailClosure.total_transfer_clp) }}</div>
           <div><strong>Otro:</strong> {{ formatClp(detailClosure.total_other_clp) }}</div>
-          <div><strong>Personas:</strong> {{ detailClosure.total_people }}</div>
-          <div><strong>Canastos:</strong> {{ detailClosure.total_baskets }}</div>
+          <div v-if="detailClosure.scope !== 'RANGE'"><strong>Personas:</strong> {{ formatNumber(detailClosure.total_people) }}</div>
+          <div v-if="detailClosure.scope !== 'RANGE'"><strong>Registros cancha:</strong> {{ formatNumber(detailClosure.total_course_records) }}</div>
+          <div v-if="detailClosure.scope !== 'RANGE'">
+            <strong>Promedio por persona:</strong> {{ formatClp(average(detailClosure.total_course_clp, detailClosure.total_people)) }}
+          </div>
+          <div v-if="detailClosure.scope !== 'COURSE'"><strong>Canastos:</strong> {{ formatNumber(detailClosure.total_baskets) }}</div>
+          <div v-if="detailClosure.scope !== 'COURSE'"><strong>Pedidos range:</strong> {{ formatNumber(detailClosure.total_range_orders) }}</div>
+          <div v-if="detailClosure.scope !== 'COURSE'">
+            <strong>Promedio por canasto:</strong> {{ formatClp(average(detailClosure.total_range_clp, detailClosure.total_baskets)) }}
+          </div>
+          <div v-if="detailClosure.scope === 'FINAL' && detailClosure.adjustment_clp">
+            <strong>Ajuste manual:</strong> {{ formatClp(detailClosure.adjustment_clp) }}
+          </div>
           <div><strong>Observaciones:</strong> {{ detailClosure.notes || "-" }}</div>
         </div>
       </div>
@@ -166,6 +179,8 @@ import {
   buildExportXlsxUrl,
   downloadBinary,
   type CashClosure,
+  type ClosureScope,
+  type ClosureSummary,
 } from "@/services/golf";
 import { useAuthStore } from "@/stores/auth";
 import DatePicker from "primevue/datepicker";
@@ -179,6 +194,7 @@ const loading = ref(false);
 const error = ref("");
 const closures = ref<CashClosure[]>([]);
 const historyClosures = ref<CashClosure[]>([]);
+const summaries = ref<Record<ClosureScope, ClosureSummary>>(defaultClosureSummaries());
 
 const canCloseCourse = ref(true);
 const canCloseRange = ref(true);
@@ -220,10 +236,43 @@ function formatClp(value: number) {
   }).format(value);
 }
 
-function scopeLabel(scope: "COURSE" | "RANGE" | "FINAL") {
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 }).format(value || 0);
+}
+
+function average(total: number, count: number) {
+  if (!count) return 0;
+  return total / count;
+}
+
+function scopeLabel(scope: ClosureScope) {
   if (scope === "COURSE") return "Cancha";
   if (scope === "RANGE") return "Driving Range";
   return "Final";
+}
+
+function emptyClosureSummary(): ClosureSummary {
+  return {
+    total_course_clp: 0,
+    total_range_clp: 0,
+    total_general_clp: 0,
+    total_cash_clp: 0,
+    total_card_clp: 0,
+    total_transfer_clp: 0,
+    total_other_clp: 0,
+    total_people: 0,
+    total_course_records: 0,
+    total_range_orders: 0,
+    total_baskets: 0,
+  };
+}
+
+function defaultClosureSummaries(): Record<ClosureScope, ClosureSummary> {
+  return {
+    COURSE: emptyClosureSummary(),
+    RANGE: emptyClosureSummary(),
+    FINAL: emptyClosureSummary(),
+  };
 }
 
 async function load() {
@@ -235,6 +284,7 @@ async function load() {
     canCloseCourse.value = data.can_close_course;
     canCloseRange.value = data.can_close_range;
     canCloseFinal.value = data.can_close_final;
+    summaries.value = data.summaries || defaultClosureSummaries();
   } catch (err: any) {
     error.value = err.response?.data?.detail || "No se pudo cargar cierres";
   } finally {
@@ -250,7 +300,7 @@ async function loadHistory() {
       record_type: "NONE",
     };
     const data = await fetchReportsRecords(params);
-    historyClosures.value = data.closures;
+    historyClosures.value = data.closures.filter((closure) => closure.scope === "FINAL");
     currentPage.value = 1;
   } catch (err: any) {
     error.value = err.response?.data?.detail || "No se pudo cargar historial";
@@ -258,8 +308,10 @@ async function loadHistory() {
 }
 
 const closeModalVisible = ref(false);
-const closeModalScope = ref<"COURSE" | "RANGE" | "FINAL">("COURSE");
+const closeModalScope = ref<ClosureScope>("COURSE");
 const submittingClose = ref(false);
+
+const closeModalSummary = computed(() => summaries.value[closeModalScope.value]);
 
 const closeModalTitle = computed(() => {
   if (closeModalScope.value === "COURSE") return "Cerrar Cancha";
@@ -275,7 +327,7 @@ const closeModalDescription = computed(() => {
   return `Generarás el cierre de ${scopeLabel(closeModalScope.value).toLowerCase()} para el día ${date}.`;
 });
 
-function openCloseModal(scope: "COURSE" | "RANGE" | "FINAL") {
+function openCloseModal(scope: ClosureScope) {
   closeModalScope.value = scope;
   closeModalVisible.value = true;
 }

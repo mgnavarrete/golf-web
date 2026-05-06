@@ -134,10 +134,12 @@
   padding: 0 12px;
 }
 
-.nav-item i {
+.nav-item i,
+.nav-material-icon {
   font-size: 20px;
   flex-shrink: 0;
   width: 20px;
+  line-height: 20px;
   text-align: center;
 }
 
@@ -171,7 +173,8 @@
   border-radius: 0 var(--minttu-radius-md) var(--minttu-radius-md) 0;
 }
 
-.nav-item.active i {
+.nav-item.active i,
+.nav-item.active .nav-material-icon {
   color: var(--minttu-accent);
 }
 

@@ -329,13 +329,32 @@ PAYMENT_METHOD_SUM_FIELDS = {
 }
 
 
-def calculate_day_totals(operational_date):
+def _empty_closure_totals():
+    return {
+        "total_course_clp": 0,
+        "total_range_clp": 0,
+        "total_general_clp": 0,
+        "total_cash_clp": 0,
+        "total_card_clp": 0,
+        "total_transfer_clp": 0,
+        "total_other_clp": 0,
+        "total_people": 0,
+        "total_course_records": 0,
+        "total_range_orders": 0,
+        "total_baskets": 0,
+    }
+
+
+def calculate_scope_totals(operational_date, scope):
     tz = timezone.get_current_timezone()
     start_dt = timezone.make_aware(datetime.combine(operational_date, time.min), tz)
     end_dt = timezone.make_aware(datetime.combine(operational_date, time.max), tz)
 
-    course_qs = CourseEntry.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt)
-    range_qs = RangeOrder.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt)
+    include_course = scope in [CashClosure.SCOPE_COURSE, CashClosure.SCOPE_FINAL]
+    include_range = scope in [CashClosure.SCOPE_RANGE, CashClosure.SCOPE_FINAL]
+
+    course_qs = CourseEntry.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt) if include_course else CourseEntry.objects.none()
+    range_qs = RangeOrder.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt) if include_range else RangeOrder.objects.none()
 
     payment_totals = {
         "total_cash_clp": 0,
@@ -362,3 +381,27 @@ def calculate_day_totals(operational_date):
         "total_baskets": int(range_qs.aggregate(value=Sum("baskets_count"))["value"] or 0),
         **payment_totals,
     }
+
+
+def calculate_day_totals(operational_date):
+    return calculate_scope_totals(operational_date, CashClosure.SCOPE_FINAL)
+
+
+def combine_closure_totals(course_closure, range_closure, adjustment_clp=0):
+    totals = _empty_closure_totals()
+    for closure in [course_closure, range_closure]:
+        if not closure:
+            continue
+        totals["total_course_clp"] += int(closure.total_course_clp or 0)
+        totals["total_range_clp"] += int(closure.total_range_clp or 0)
+        totals["total_cash_clp"] += int(closure.total_cash_clp or 0)
+        totals["total_card_clp"] += int(closure.total_card_clp or 0)
+        totals["total_transfer_clp"] += int(closure.total_transfer_clp or 0)
+        totals["total_other_clp"] += int(closure.total_other_clp or 0)
+        totals["total_people"] += int(closure.total_people or 0)
+        totals["total_course_records"] += int(closure.total_course_records or 0)
+        totals["total_range_orders"] += int(closure.total_range_orders or 0)
+        totals["total_baskets"] += int(closure.total_baskets or 0)
+
+    totals["total_general_clp"] = totals["total_course_clp"] + totals["total_range_clp"] + int(adjustment_clp or 0)
+    return totals

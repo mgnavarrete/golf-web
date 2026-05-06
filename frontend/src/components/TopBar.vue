@@ -13,7 +13,14 @@
         <template #item="{ item, props }">
           <router-link v-if="item.route" v-slot="{ href, navigate }" :to="item.route" custom>
             <a :href="href" v-bind="props.action" @click="navigate">
-              <span :class="[item.icon, 'text-color', 'breadcrumb-icon']" />
+              <span
+                v-if="item.materialIcon"
+                class="material-symbols-outlined text-color breadcrumb-icon"
+                aria-hidden="true"
+              >
+                {{ item.materialIcon }}
+              </span>
+              <span v-else :class="[item.icon, 'text-color', 'breadcrumb-icon']" />
               <span class="text-primary font-semibold breadcrumb-label">{{ item.label }}</span>
             </a>
           </router-link>
@@ -32,7 +39,8 @@ import "@/styles/components/topbar.css";
 
 interface RouteInfo {
   label: string;
-  icon: string;
+  icon?: string;
+  materialIcon?: string;
   route: string;
 }
 
@@ -41,18 +49,18 @@ defineEmits<{ (e: "toggle-sidebar"): void }>();
 const route = useRoute();
 
 const home = {
-  icon: "pi pi-home",
+  materialIcon: "home",
   route: "/",
 };
 
 const routeMap: Record<string, RouteInfo> = {
-  "/": { label: "Inicio", icon: "pi pi-home", route: "/" },
-  "/course-entries": { label: "Entradas Cancha", icon: "pi pi-users", route: "/course-entries" },
+  "/": { label: "Inicio", materialIcon: "home", route: "/" },
+  "/course-entries": { label: "Entradas Cancha", materialIcon: "golf_course", route: "/course-entries" },
   "/course-entries/new": { label: "Nueva Entrada", icon: "pi pi-plus", route: "/course-entries/new" },
-  "/range-orders": { label: "Pedidos Range", icon: "pi pi-shopping-cart", route: "/range-orders" },
+  "/range-orders": { label: "Pedidos Range", materialIcon: "sports_golf", route: "/range-orders" },
   "/range-orders/new": { label: "Nuevo Pedido", icon: "pi pi-plus", route: "/range-orders/new" },
-  "/closures": { label: "Cierre de Caja", icon: "pi pi-wallet", route: "/closures" },
-  "/reports": { label: "Reportes", icon: "pi pi-chart-line", route: "/reports" },
+  "/closures": { label: "Cierre de Caja", materialIcon: "point_of_sale", route: "/closures" },
+  "/reports": { label: "Reportes", materialIcon: "analytics", route: "/reports" },
   "/profile": { label: "Perfil", icon: "pi pi-user", route: "/profile" },
   "/config": { label: "Configuración", icon: "pi pi-cog", route: "/config" },
 };
