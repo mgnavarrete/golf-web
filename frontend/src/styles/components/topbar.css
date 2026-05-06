@@ -1,0 +1,276 @@
+/* ============================================
+   TOPBAR COMPONENT STYLES
+   Reusable top navigation bar component
+   ============================================ */
+
+.topbar {
+  background: transparent;
+  padding: 32px 32px 0 0;
+  padding-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 0;
+}
+
+/* Con selector de empresa (Super Admin) */
+.topbar.has-company-selector {
+  justify-content: space-between;
+}
+
+/* Sin selector de empresa (Admin/Viewer) */
+.topbar:not(.has-company-selector) {
+  justify-content: space-between;
+}
+
+.topbar-left {
+  flex-shrink: 0;
+}
+
+.topbar-center {
+  flex: 0 0 auto;
+  margin: 0 auto;
+}
+
+.topbar-right {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.page-title {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--minttu-gray);
+  margin-left: 0;
+}
+
+/* PrimeVue Breadcrumb Overrides */
+.topbar :deep(.p-breadcrumb),
+.topbar :deep(.p-breadcrumb *),
+.topbar :deep(.p-breadcrumb-list),
+.topbar :deep(.p-breadcrumb-item),
+.topbar :deep(.p-breadcrumb-root),
+.topbar :deep(.p-breadcrumb-link),
+.topbar :deep(.p-breadcrumb-link *),
+.topbar :deep(ul.p-breadcrumb-list),
+.topbar :deep(li.p-breadcrumb-item) {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.topbar :deep(.p-breadcrumb) {
+  padding: 0 !important;
+}
+
+.topbar :deep(.p-breadcrumb-list) {
+  margin: 0;
+  padding: 0;
+}
+
+.topbar :deep(.p-breadcrumb-item) {
+  margin: 0;
+}
+
+.topbar :deep(.p-breadcrumb-separator) {
+  color: var(--minttu-gray);
+  margin: 0 8px;
+}
+
+.topbar :deep(.p-breadcrumb-link) {
+  color: var(--minttu-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.topbar :deep(.p-breadcrumb-link:hover) {
+  color: var(--minttu-primary);
+  text-decoration: underline;
+}
+
+.topbar :deep(.text-primary) {
+  color: var(--minttu-primary) !important;
+}
+
+.topbar :deep(.font-semibold) {
+  font-weight: 600;
+}
+
+/* Breadcrumb específico - forzar fondo transparente */
+.topbar-breadcrumb,
+.topbar-breadcrumb :deep(.p-breadcrumb),
+.topbar-breadcrumb :deep(.p-breadcrumb *),
+.topbar-breadcrumb :deep(ul),
+.topbar-breadcrumb :deep(li),
+.topbar-breadcrumb :deep(a),
+.topbar-breadcrumb :deep(span) {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* ============================================
+   COMPANY SELECTOR (Solo Super Admin)
+   ============================================ */
+.company-selector {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  border: 1px solid var(--minttu-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-width: 280px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.company-selector:hover {
+  border-color: var(--minttu-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.selector-icon {
+  color: var(--minttu-primary);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.company-dropdown {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--minttu-text);
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.company-dropdown:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.company-dropdown option {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.selector-chevron {
+  color: var(--minttu-gray);
+  font-size: 12px;
+  flex-shrink: 0;
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.company-selector:hover .selector-chevron {
+  color: var(--minttu-primary);
+}
+
+/* Botón hamburguesa para móvil */
+.mobile-menu-button {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--minttu-border);
+  border-radius: 8px;
+  background: white;
+  color: var(--minttu-primary);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobile-menu-button:hover {
+  background: var(--minttu-bg);
+  border-color: var(--minttu-primary);
+}
+
+.mobile-menu-button i {
+  font-size: 20px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .mobile-menu-button {
+    display: flex;
+  }
+  
+  .topbar {
+    padding: 16px 16px 0 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  .topbar-left {
+    flex: 1;
+  }
+  
+  .topbar-center {
+    margin: 0;
+  }
+  
+  .topbar-right {
+    margin-left: 0;
+  }
+  
+  .company-selector {
+    width: 100%;
+    min-width: unset;
+  }
+
+  /* Breadcrumb solo icono en móvil */
+  .topbar :deep(.breadcrumb-label) {
+    display: none;
+  }
+
+  .topbar :deep(.breadcrumb-icon) {
+    font-size: 20px;
+    display: inline-block;
+  }
+
+  .topbar :deep(.p-breadcrumb-separator) {
+    display: none;
+  }
+
+  .topbar :deep(.p-breadcrumb-link) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+  }
+
+  .topbar :deep(.p-breadcrumb-link:hover) {
+    background-color: var(--minttu-bg);
+  }
+
+  .topbar :deep(.p-breadcrumb-root) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .topbar :deep(.p-breadcrumb-root .p-breadcrumb-link) {
+    width: 32px;
+    height: 32px;
+  }
+}
+

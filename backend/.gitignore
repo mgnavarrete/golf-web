@@ -1,0 +1,116 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+.venv
+venv
+ENV
+env
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+/static_collected
+*.pot
+
+# Django migrations (opcional - descomenta si no quieres versionar migraciones)
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# Django locales
+*.mo
+*.po
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+*.cover
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# IDEs
+*.sublime-project
+*.sublime-workspace
+
+# Backup files
+*.bak
+*.backup
+*.tmp
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Pycharm
+.idea/
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# Secret files
+secrets.json
+secret_key.txt
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Media files (subidas por usuarios)
+/media/*
+!/media/.gitkeep
+
+# Static files compilados
+/staticfiles/*
+!/staticfiles/.gitkeep

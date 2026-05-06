@@ -1,0 +1,114 @@
+/* ============================================
+   BUTTON COMPONENT STYLES
+   Reusable button styles for Minttu theme
+   ============================================ */
+
+/* Base Button Style */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: var(--minttu-radius-md);
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  font-family: inherit;
+  outline: none;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn i {
+  font-size: 14px;
+}
+
+/* Primary Button */
+.btn-primary {
+  background: var(--minttu-primary);
+  color: var(--minttu-white);
+  box-shadow: 0 2px 8px rgba(27, 67, 50, 0.15);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--minttu-primary-hover);
+  color: var(--minttu-white);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(27, 67, 50, 0.2);
+}
+
+.btn-primary:focus {
+  box-shadow: 0 0 0 3px rgba(27, 67, 50, 0.2);
+}
+
+/* Accent / Gold Button (For Main Actions) */
+.btn-accent {
+  background: var(--minttu-accent);
+  color: var(--minttu-primary);
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+  font-weight: 600;
+}
+
+.btn-accent:hover:not(:disabled) {
+  background: #E8C349;
+  color: var(--minttu-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.btn-accent:focus {
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.4);
+}
+
+/* Secondary Button (Ghost/Outline style) */
+.btn-secondary {
+  background: var(--minttu-bg);
+  color: var(--minttu-primary);
+  border: 1px solid var(--minttu-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--minttu-border);
+  color: var(--minttu-primary-hover);
+}
+
+/* Danger Button */
+.btn-danger {
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #DC2626;
+  color: white;
+}
+
+/* Legacy PrimeVue Overrides (kept for compatibility) */
+.submit-button :deep(.p-button),
+.submit-button :deep(button.p-button),
+.submit-button :deep(.p-component),
+.submit-button :deep(.p-button.p-button-success) {
+  background: var(--minttu-primary) !important;
+  color: var(--minttu-white) !important;
+  border: none !important;
+  border-radius: var(--minttu-radius-sm) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 8px rgba(27, 67, 50, 0.15) !important;
+}
+
+.submit-button :deep(.p-button:hover:not(:disabled)),
+.submit-button :deep(.p-component:hover:not(:disabled)) {
+  background: var(--minttu-primary-hover) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(27, 67, 50, 0.2) !important;
+}

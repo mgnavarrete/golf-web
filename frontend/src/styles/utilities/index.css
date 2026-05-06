@@ -1,0 +1,8 @@
+/* ============================================
+   UTILITIES STYLES INDEX
+   Import all utility styles
+   ============================================ */
+
+@import './transitions.css';
+@import './typography.css';
+

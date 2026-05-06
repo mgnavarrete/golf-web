@@ -1,0 +1,1 @@
+"""Managers legacy removidos."""

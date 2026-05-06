@@ -1,0 +1,1 @@
+"""Legacy edge authentication removed."""

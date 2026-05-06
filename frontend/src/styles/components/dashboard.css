@@ -1,0 +1,179 @@
+/* ============================================
+   DASHBOARD LAYOUT
+   ============================================ */
+
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--minttu-spacing-lg);
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--minttu-spacing-lg);
+  margin-bottom: var(--minttu-spacing-xs);
+  flex-wrap: wrap;
+}
+
+.dashboard-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--minttu-spacing-xs);
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--minttu-primary);
+  margin: 0;
+}
+
+.dashboard-subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--minttu-gray);
+  margin: 0;
+}
+
+.dashboard-period-selector-wrapper {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   METRICS GRID
+   ============================================ */
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--minttu-spacing-md);
+}
+
+/* ============================================
+   DASHBOARD GRID
+   ============================================ */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--minttu-spacing-lg);
+  align-items: stretch; /* Asegurar que todas las tarjetas tengan la misma altura */
+}
+
+/* Asegurar que todos los contenedores de gráficos tengan la misma altura */
+.dashboard-grid > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-grid > div > * {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Permite que el contenido se ajuste */
+}
+
+.dashboard-grid-full {
+  grid-column: 1 / -1;
+}
+
+.dashboard-chart-time {
+  grid-column: 1 / 9; /* Ocupa 8 columnas */
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.dashboard-chart-type {
+  grid-column: 9 / -1; /* Ocupa 4 columnas */
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.dashboard-alerts-list {
+  grid-column: 1 / 7; /* Ocupa 6 columnas */
+}
+
+.dashboard-alerts-gallery {
+  grid-column: 7 / -1; /* Ocupa 6 columnas */
+}
+
+.dashboard-cameras-list {
+  grid-column: 1 / 7; /* Ocupa 6 columnas */
+}
+
+.dashboard-cameras-map {
+  grid-column: 7 / -1; /* Ocupa 6 columnas */
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .dashboard-chart-time,
+  .dashboard-chart-type,
+  .dashboard-alerts-list,
+  .dashboard-alerts-gallery,
+  .dashboard-cameras-list,
+  .dashboard-cameras-map {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Header responsive */
+  .dashboard-header {
+    flex-direction: column;
+    gap: var(--minttu-spacing-md);
+    align-items: stretch;
+  }
+
+  .dashboard-header-left {
+    width: 100%;
+  }
+
+  .dashboard-title {
+    font-size: 20px;
+  }
+
+  .dashboard-subtitle {
+    font-size: 13px;
+  }
+
+  .dashboard-period-selector-wrapper {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Métricas en grid 2x2 */
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--minttu-spacing-sm);
+  }
+
+  /* Dashboard grid */
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: var(--minttu-spacing-md);
+  }
+  
+  .dashboard-chart-time,
+  .dashboard-chart-type,
+  .dashboard-alerts-list,
+  .dashboard-alerts-gallery,
+  .dashboard-cameras-list,
+  .dashboard-cameras-map {
+    grid-column: 1 / -1;
+  }
+
+  /* Reducir padding de contenedor */
+  .dashboard-container {
+    gap: var(--minttu-spacing-md);
+  }
+}

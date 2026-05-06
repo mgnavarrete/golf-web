@@ -1,0 +1,406 @@
+/* ============================================
+   LOGIN PAGE STYLES
+   ============================================ */
+
+/* Importar variables y estilos base */
+@import './minttu.css';
+@import './components/buttons.css';
+
+/* Layout Principal */
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--minttu-white);
+}
+
+/* ============================================
+   PANEL DE IMÁGENES
+   ============================================ */
+
+.image-panel {
+  position: relative;
+  overflow: hidden;
+  background: var(--minttu-primary);
+}
+
+.image-carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.carousel-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+.carousel-slide.active {
+  opacity: 1;
+}
+
+.carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.6);
+}
+
+.image-panel-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 96px;
+  object-fit: contain;
+  z-index: 10;
+  filter: brightness(0) invert(1);
+}
+
+/* ============================================
+   PANEL DE FORMULARIO
+   ============================================ */
+
+.form-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 40px;
+  background: var(--minttu-bg);
+  position: relative;
+}
+
+.form-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  width: 100%;
+}
+
+.form-container {
+  width: 100%;
+  max-width: 440px;
+  background: var(--minttu-white);
+  border: 1px solid var(--minttu-border);
+  border-radius: var(--minttu-radius);
+  padding: 48px 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Header del Formulario */
+.form-header {
+  margin-bottom: 36px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--minttu-primary);
+  letter-spacing: -0.3px;
+}
+
+.form-subtitle {
+  font-size: 14px;
+  margin: 0;
+  color: var(--minttu-gray);
+  font-weight: 400;
+}
+
+/* Formulario */
+.form {
+  display: grid;
+  gap: 20px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--minttu-primary);
+  letter-spacing: 0.2px;
+}
+
+/* Campos de Entrada */
+.input-field {
+  width: 100%;
+}
+
+.input-field :deep(.p-inputtext),
+.input-field :deep(.p-password),
+.input-field :deep(.p-password input) {
+  width: 100%;
+}
+
+.input-field :deep(.p-inputtext),
+.input-field :deep(.p-password input) {
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 1px solid var(--minttu-border) !important;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: var(--minttu-white);
+  color: var(--minttu-primary);
+  height: 44px;
+  box-sizing: border-box;
+}
+
+.input-field :deep(.p-password) {
+  height: 44px;
+}
+
+.input-field :deep(.p-inputtext:focus),
+.input-field :deep(.p-password input:focus),
+.input-field :deep(.p-inputtext:focus-visible),
+.input-field :deep(.p-password input:focus-visible),
+.input-field :deep(.p-password:focus-within) {
+  outline: none !important;
+  border-color: var(--minttu-primary) !important;
+  box-shadow: 0 0 0 3px rgba(29, 33, 49, 0.1) !important;
+}
+
+.input-field :deep(.p-password:focus-within input) {
+  border-color: var(--minttu-primary) !important;
+}
+
+.input-field.p-invalid :deep(.p-inputtext),
+.input-field.p-invalid :deep(.p-password input) {
+  border-color: #e24c4c;
+}
+
+/* Mensajes y Botones */
+.error-message {
+  margin: 0;
+}
+
+.submit-button {
+  margin-top: 8px;
+}
+
+/* Forzar color primario de Minttu - sobrescribir cualquier estilo de PrimeVue */
+.submit-button button,
+.submit-button .p-button,
+.submit-button .p-button.p-button-success {
+  background: var(--minttu-primary) !important;
+  background-color: var(--minttu-primary) !important;
+  border-color: var(--minttu-primary) !important;
+  color: #ffffff !important;
+}
+
+.submit-button :deep(.p-button),
+.submit-button :deep(.p-button.p-button-success),
+.submit-button :deep(.p-button:not(.p-button-outlined):not(.p-button-text):not(.p-button-link)),
+.submit-button :deep(button.p-button),
+.submit-button :deep(button.p-button.p-button-success) {
+  width: 100% !important;
+  padding: 12px !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  background: var(--minttu-primary) !important;
+  background-color: var(--minttu-primary) !important;
+  border-color: var(--minttu-primary) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Sobrescribir cualquier estilo de PrimeVue success */
+.submit-button :deep(.p-button.p-button-success),
+.submit-button :deep(button.p-button-success) {
+  background: var(--minttu-primary) !important;
+  background-color: var(--minttu-primary) !important;
+  border-color: var(--minttu-primary) !important;
+}
+
+.submit-button :deep(.p-button:hover:not(:disabled)),
+.submit-button :deep(.p-button.p-button-success:hover:not(:disabled)),
+.submit-button :deep(button.p-button:hover:not(:disabled)),
+.submit-button :deep(button.p-button-success:hover:not(:disabled)) {
+  background: rgba(29, 33, 49, 0.95) !important;
+  background-color: rgba(29, 33, 49, 0.95) !important;
+  border-color: rgba(29, 33, 49, 0.95) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(29, 33, 49, 0.2) !important;
+}
+
+.submit-button :deep(.p-button:active:not(:disabled)),
+.submit-button :deep(.p-button.p-button-success:active:not(:disabled)),
+.submit-button :deep(button.p-button:active:not(:disabled)),
+.submit-button :deep(button.p-button-success:active:not(:disabled)) {
+  transform: translateY(0) !important;
+  background: var(--minttu-primary) !important;
+  background-color: var(--minttu-primary) !important;
+  border-color: var(--minttu-primary) !important;
+  color: #ffffff !important;
+}
+
+.submit-button :deep(.p-button:focus),
+.submit-button :deep(.p-button.p-button-success:focus),
+.submit-button :deep(button.p-button:focus),
+.submit-button :deep(button.p-button-success:focus) {
+  box-shadow: 0 0 0 3px rgba(29, 33, 49, 0.1) !important;
+  background: var(--minttu-primary) !important;
+  background-color: var(--minttu-primary) !important;
+  border-color: var(--minttu-primary) !important;
+  color: #ffffff !important;
+  outline: none !important;
+}
+
+.submit-button :deep(.p-button:disabled) {
+  background: var(--minttu-gray) !important;
+  border-color: var(--minttu-gray) !important;
+  color: var(--minttu-white) !important;
+  opacity: 0.6;
+}
+
+/* Footer del Formulario */
+.form-footer {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.footer-text {
+  font-size: 13px;
+  color: var(--minttu-gray);
+  margin: 0;
+}
+
+.footer-link {
+  color: var(--minttu-primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: rgba(29, 33, 49, 0.95);
+  text-decoration: underline;
+}
+
+/* Utilidades */
+.w-full {
+  width: 100%;
+}
+
+/* ============================================
+   LOGO MÓVIL
+   ============================================ */
+
+.mobile-logo {
+  display: none;
+  text-align: center;
+  margin-bottom: 24px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.mobile-logo img {
+  height: 64px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    position: relative;
+  }
+
+  /* Mostrar el panel de imágenes como fondo en móvil */
+  .image-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+  }
+
+  /* Ocultar el logo del panel de imágenes en móvil */
+  .image-panel-logo {
+    display: none;
+  }
+
+  /* Form panel con overlay para legibilidad */
+  .form-panel {
+    padding: 24px;
+    position: relative;
+    z-index: 1;
+    background: transparent;
+  }
+
+  /* Form container con fondo semi-transparente */
+  .form-container {
+    padding: 36px 28px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  /* Mostrar logo móvil */
+  .mobile-logo {
+    display: block;
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-panel {
+    padding: 20px;
+  }
+
+  .form-container {
+    padding: 32px 24px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(15px);
+  }
+
+  .form-title {
+    font-size: 24px;
+  }
+
+  .mobile-logo {
+    margin-bottom: 20px;
+  }
+
+  .mobile-logo img {
+    height: 56px;
+  }
+
+  /* Ajustar el carousel para que cubra todo el fondo */
+  .image-carousel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .carousel-image {
+    filter: brightness(0.4);
+  }
+}
+

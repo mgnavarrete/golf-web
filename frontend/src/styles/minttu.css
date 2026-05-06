@@ -1,0 +1,155 @@
+:root {
+    /* Colores principales */
+    --minttu-primary: #1B4332;
+    --minttu-primary-hover: #2D6A4F;
+    --minttu-accent: #D4AF37;
+    --minttu-gray: #6B7C73;
+    --minttu-sand: #D4AF37;
+    --minttu-text: #112A1F;
+    --minttu-white: #ffffff;
+  
+    /* Colores de fondo y bordes */
+    --minttu-bg: #F0F4F2;
+    --minttu-border: #E0E8E4;
+  
+    /* Bordes redondeados */
+    --minttu-radius: 12px;
+    --minttu-radius-xl: 24px;
+    --minttu-radius-lg: 16px;
+    --minttu-radius-md: 10px;
+    --minttu-radius-sm: 6px;
+  
+    /* Sombras */
+    --minttu-shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.04);
+    --minttu-shadow-medium: 0 8px 32px rgba(27, 67, 50, 0.08);
+  
+    /* Espaciado */
+    --minttu-spacing-xs: 4px;
+    --minttu-spacing-sm: 8px;
+    --minttu-spacing-md: 16px;
+    --minttu-spacing-lg: 24px;
+    --minttu-spacing-xl: 32px;
+  }
+  
+  html, body {
+    font-family: "DM Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    margin: 0;
+    background: var(--minttu-bg);
+    color: var(--minttu-text);
+  }
+  
+  a { color: inherit; text-decoration: none; }
+
+/* ============================================
+   PRIMEVUE BREADCRUMB GLOBAL OVERRIDES
+   Sobrescribe estilos por defecto de PrimeVue
+   ============================================ */
+.p-breadcrumb,
+.p-breadcrumb *,
+.p-breadcrumb ul,
+.p-breadcrumb li,
+.p-breadcrumb-list,
+.p-breadcrumb-item,
+.p-breadcrumb-root,
+.p-breadcrumb-link,
+.p-breadcrumb-link *,
+.p-breadcrumb-separator,
+.p-breadcrumb-separator *,
+[class*="p-breadcrumb"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Forzar fondo transparente en todos los elementos del breadcrumb */
+.p-breadcrumb,
+.p-breadcrumb::before,
+.p-breadcrumb::after,
+.p-breadcrumb *::before,
+.p-breadcrumb *::after {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Asegurar que no haya bordes ni padding que creen apariencia de fondo */
+.p-breadcrumb {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ============================================
+   PRIMEVUE SELECT & DATEPICKER OVERRIDES
+   Corrige colores primarios (azul por defecto) a verde
+   ============================================ */
+/* Color de ítem seleccionado en el dropdown */
+.p-select-option[data-p-selected="true"],
+.p-select-option[data-p-highlight="true"] {
+  background: rgba(27, 67, 50, 0.1) !important;
+  color: var(--minttu-primary) !important;
+}
+
+/* Color en estado hover para las opciones */
+.p-select-option:hover,
+.p-select-option[data-p-focused="true"] {
+  background: rgba(27, 67, 50, 0.06) !important;
+  color: var(--minttu-primary) !important;
+}
+
+/* Color del texto visible en el componente Select cuando está cerrado */
+.p-select .p-select-label {
+  color: var(--minttu-text) !important;
+}
+
+/* Fondo blanco para la lista de opciones que se abre */
+.p-select-overlay,
+.p-datepicker {
+  background-color: var(--minttu-white) !important;
+  border: 1px solid var(--minttu-border) !important;
+}
+
+/* Color por defecto de las opciones de la lista */
+.p-select-option {
+  color: var(--minttu-text) !important;
+  transition: all 0.2s ease;
+}
+
+/* Botón de calendario en DatePicker */
+.p-datepicker-trigger,
+.p-datepicker-dropdown,
+.p-button.p-datepicker-dropdown {
+  background: var(--minttu-primary) !important;
+  border-color: var(--minttu-primary) !important;
+  color: var(--minttu-white) !important;
+}
+
+.p-datepicker-trigger:hover,
+.p-datepicker-dropdown:hover,
+.p-button.p-datepicker-dropdown:hover {
+  background: var(--minttu-primary-hover) !important;
+  border-color: var(--minttu-primary-hover) !important;
+}
+
+/* ============================================
+   OCULTAR VUE DEVTOOLS
+   Oculta el icono de Vue DevTools en pantalla y al imprimir
+   ============================================ */
+/* Ocultar botón de Vue DevTools */
+#__vue-devtools-button__ {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Ocultar contenedor de Vue DevTools */
+.__vue-devtools-container__ {
+  display: none !important;
+}
+
+/* Ocultar en impresión también */
+@media print {
+  #__vue-devtools-button__,
+  .__vue-devtools-container__ {
+    display: none !important;
+  }
+}
+  

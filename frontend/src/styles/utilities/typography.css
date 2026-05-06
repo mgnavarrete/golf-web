@@ -1,0 +1,48 @@
+/* ============================================
+   TYPOGRAPHY UTILITIES
+   Reusable typography styles
+   ============================================ */
+
+/* Page Titles */
+.page-title-h1 {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--minttu-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.page-title-h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--minttu-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.page-title-h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--minttu-primary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Subtitles */
+.page-subtitle {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--minttu-gray);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Body Text */
+.text-muted {
+  color: var(--minttu-gray);
+}
+
+.text-primary {
+  color: var(--minttu-primary);
+}
+
