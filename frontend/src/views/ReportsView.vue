@@ -1,7 +1,7 @@
 <template>
   <div class="page">
     <div class="header">
-      <h1>Reportes e Historial</h1>
+      <h1>Reportes Históricos</h1>
       <div class="actions">
         <button class="btn btn-primary btn-large" @click="downloadXlsx"><i class="pi pi-file-excel"></i> Exportar Excel</button>
       </div>
@@ -137,9 +137,11 @@ const paymentOptions = [
 ];
 
 const today = new Date();
+const monthAgo = new Date(today);
+monthAgo.setMonth(monthAgo.getMonth() - 1);
 
 const filters = ref({
-  date_from: today,
+  date_from: monthAgo,
   date_to: today,
   record_type: "BOTH",
   payment_method: "",
