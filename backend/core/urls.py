@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     BusinessSettingsView,
     CashCloseView,
+    CashClosureDetailView,
     CashClosuresStatusView,
     CashReopenView,
     CourseEntryDetailView,
@@ -24,6 +25,7 @@ urlpatterns = [
     path("range-orders/<int:pk>/", RangeOrderDetailView.as_view(), name="range_order_detail"),
     path("dashboard/summary/", DashboardSummaryView.as_view(), name="dashboard_summary"),
     path("closures/status/", CashClosuresStatusView.as_view(), name="closures_status"),
+    path("closures/<int:pk>/detail/", CashClosureDetailView.as_view(), name="closure_detail"),
     path("closures/close/", CashCloseView.as_view(), name="closures_close"),
     path("closures/reopen/", CashReopenView.as_view(), name="closures_reopen"),
     path("reports/summary/", ReportsSummaryView.as_view(), name="reports_summary"),

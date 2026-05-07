@@ -91,8 +91,26 @@ export interface CashClosure {
   total_baskets: number;
   adjustment_clp: number;
   notes: string;
+  per_user_totals: ClosureUserTotal[];
   closed_by_name: string;
   closed_at: string;
+}
+
+export interface ClosureUserTotal {
+  user_id?: number;
+  email?: string;
+  name: string;
+  course_clp: number;
+  range_clp: number;
+  total_clp: number;
+}
+
+export interface CashClosureDetail {
+  closure: CashClosure;
+  course_entries: CourseEntry[];
+  range_orders: RangeOrder[];
+  payment_totals: Record<PaymentMethod, number>;
+  per_user_totals: ClosureUserTotal[];
 }
 
 export interface ReopenScopeResponse {
@@ -232,6 +250,11 @@ export async function fetchClosuresStatus(operationalDate?: string): Promise<Clo
   const { data } = await api.get<ClosuresStatusResponse>("/api/closures/status/", {
     params: operationalDate ? { operational_date: operationalDate } : {},
   });
+  return data;
+}
+
+export async function fetchClosureDetail(id: number): Promise<CashClosureDetail> {
+  const { data } = await api.get<CashClosureDetail>(`/api/closures/${id}/detail/`);
   return data;
 }
 

@@ -6,6 +6,7 @@ import CourseEntriesView from "@/views/CourseEntriesView.vue";
 import CourseEntryFormView from "@/views/CourseEntryFormView.vue";
 import RangeOrdersView from "@/views/RangeOrdersView.vue";
 import RangeOrderFormView from "@/views/RangeOrderFormView.vue";
+import ClosureDetailView from "@/views/ClosureDetailView.vue";
 import ClosuresView from "@/views/ClosuresView.vue";
 import ReportsView from "@/views/ReportsView.vue";
 import ConfigView from "@/views/ConfigView.vue";
@@ -56,6 +57,11 @@ const routes = [
     path: "/closures",
     component: ClosuresView,
     meta: { title: "Cierre de Caja", requiresAuth: true, permission: "can_close_day" },
+  },
+  {
+    path: "/closures/:id",
+    component: ClosureDetailView,
+    meta: { title: "Detalle de Cierre", requiresAuth: true, permission: "can_close_day" },
   },
   {
     path: "/reports",

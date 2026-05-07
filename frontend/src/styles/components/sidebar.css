@@ -67,8 +67,8 @@
 }
 
 .logo-icon {
-  width: 70px;
-  height: 70px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
   opacity: 1;
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -76,7 +76,7 @@
 
 .logo-full {
   position: absolute;
-  height: 70px;
+  height: 60px;
   width: auto;
   max-width: 200px;
   object-fit: contain;
@@ -462,7 +462,8 @@
     position: fixed;
     top: 0;
     left: 0;
-    height: 100%; /* Fallback */
+    height: 100%;
+    /* Fallback */
     height: 100dvh;
     width: 280px;
     padding: 0;
@@ -477,7 +478,8 @@
   }
 
   .sidebar-panel {
-    height: 100%; /* Fallback */
+    height: 100%;
+    /* Fallback */
     height: 100dvh;
     border-radius: 0;
     border-left: none;

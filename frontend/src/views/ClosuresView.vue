@@ -38,7 +38,7 @@
               <td class="font-medium">{{ formatClp(closure.total_general_clp) }}</td>
               <td>{{ closure.closed_by_name }}</td>
               <td class="actions-cell">
-                <button class="action" @click="openDetail(closure)">Ver</button>
+                <button class="action" @click="openDetail(closure.id)">Ver</button>
                 <button v-if="canReopen" class="action danger" @click="askReopen(closure)">Reabrir</button>
                 <button v-if="closure.scope === 'FINAL'" class="action" @click="downloadExcel(closure.operational_date)">
                   <i class="pi pi-file-excel"></i> Excel
@@ -71,7 +71,7 @@
               <th>Estado</th>
               <th>Total General</th>
               <th>Usuario Cierre</th>
-              <th>Descarga</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -82,6 +82,7 @@
               <td>{{ formatClp(closure.total_general_clp) }}</td>
               <td>{{ closure.closed_by_name }}</td>
               <td class="actions-cell">
+                <button class="action" @click="openDetail(closure.id)">Ver</button>
                 <button class="action" @click="downloadExcel(closure.operational_date)">
                   <i class="pi pi-file-excel"></i> Excel
                 </button>
@@ -130,47 +131,12 @@
       @cancel="cancelReopen"
       @confirm="confirmReopen"
     />
-
-    <div v-if="detailClosure" class="modal-overlay" @click.self="detailClosure = null">
-      <div class="modal-container detail-modal">
-        <div class="modal-header">
-          <h3>Detalle de Cierre</h3>
-          <button class="modal-close" type="button" @click="detailClosure = null">
-            <i class="pi pi-times"></i>
-          </button>
-        </div>
-        <div class="modal-body detail-grid">
-          <div><strong>Fecha:</strong> {{ detailClosure.operational_date }}</div>
-          <div><strong>Área:</strong> {{ scopeLabel(detailClosure.scope) }}</div>
-          <div v-if="detailClosure.scope !== 'RANGE'"><strong>Total Cancha:</strong> {{ formatClp(detailClosure.total_course_clp) }}</div>
-          <div v-if="detailClosure.scope !== 'COURSE'"><strong>Total Range:</strong> {{ formatClp(detailClosure.total_range_clp) }}</div>
-          <div><strong>Total General:</strong> {{ formatClp(detailClosure.total_general_clp) }}</div>
-          <div><strong>Efectivo:</strong> {{ formatClp(detailClosure.total_cash_clp) }}</div>
-          <div><strong>Tarjeta:</strong> {{ formatClp(detailClosure.total_card_clp) }}</div>
-          <div><strong>Transferencia:</strong> {{ formatClp(detailClosure.total_transfer_clp) }}</div>
-          <div><strong>Otro:</strong> {{ formatClp(detailClosure.total_other_clp) }}</div>
-          <div v-if="detailClosure.scope !== 'RANGE'"><strong>Personas:</strong> {{ formatNumber(detailClosure.total_people) }}</div>
-          <div v-if="detailClosure.scope !== 'RANGE'"><strong>Registros cancha:</strong> {{ formatNumber(detailClosure.total_course_records) }}</div>
-          <div v-if="detailClosure.scope !== 'RANGE'">
-            <strong>Promedio por persona:</strong> {{ formatClp(average(detailClosure.total_course_clp, detailClosure.total_people)) }}
-          </div>
-          <div v-if="detailClosure.scope !== 'COURSE'"><strong>Canastos:</strong> {{ formatNumber(detailClosure.total_baskets) }}</div>
-          <div v-if="detailClosure.scope !== 'COURSE'"><strong>Pedidos range:</strong> {{ formatNumber(detailClosure.total_range_orders) }}</div>
-          <div v-if="detailClosure.scope !== 'COURSE'">
-            <strong>Promedio por canasto:</strong> {{ formatClp(average(detailClosure.total_range_clp, detailClosure.total_baskets)) }}
-          </div>
-          <div v-if="detailClosure.scope === 'FINAL' && detailClosure.adjustment_clp">
-            <strong>Ajuste manual:</strong> {{ formatClp(detailClosure.adjustment_clp) }}
-          </div>
-          <div><strong>Observaciones:</strong> {{ detailClosure.notes || "-" }}</div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import {
   closeDayScope,
   fetchClosuresStatus,
@@ -188,6 +154,7 @@ import ConfirmActionModal from "@/components/modals/ConfirmActionModal.vue";
 import ClosureFormModal from "@/components/modals/ClosureFormModal.vue";
 
 const auth = useAuthStore();
+const router = useRouter();
 const canReopen = computed(() => auth.me?.permissions?.can_reopen_closure || auth.isAdmin);
 
 const loading = ref(false);
@@ -238,11 +205,6 @@ function formatClp(value: number) {
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 }).format(value || 0);
-}
-
-function average(total: number, count: number) {
-  if (!count) return 0;
-  return total / count;
 }
 
 function scopeLabel(scope: ClosureScope) {
@@ -387,10 +349,8 @@ async function confirmReopen() {
   }
 }
 
-const detailClosure = ref<CashClosure | null>(null);
-
-function openDetail(closure: CashClosure) {
-  detailClosure.value = closure;
+function openDetail(id: number) {
+  router.push(`/closures/${id}`);
 }
 
 async function downloadExcel(opDate: string) {
@@ -538,16 +498,6 @@ tbody tr:hover {
 .history-table {
   margin-top: 16px;
 }
-.detail-modal {
-  max-width: 640px;
-}
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  font-size: 14px;
-}
-
 @media (max-width: 768px) {
   .actions-grid {
     grid-template-columns: 1fr;
@@ -559,9 +509,6 @@ tbody tr:hover {
   }
   .controls > * {
     width: 100%;
-  }
-  .detail-grid {
-    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -260,8 +260,15 @@ class DashboardSummaryView(APIView):
         operational_date = _parse_operational_date(request.query_params.get("operational_date"))
 
         totals = calculate_day_totals(operational_date)
-        latest_course = CourseEntry.objects.select_related("created_by").order_by("-created_at")[:5]
-        latest_range = RangeOrder.objects.select_related("created_by").order_by("-created_at")[:5]
+        start_dt, end_dt = _day_bounds(operational_date)
+        latest_course = CourseEntry.objects.filter(
+            created_at__gte=start_dt,
+            created_at__lte=end_dt,
+        ).select_related("created_by").order_by("-created_at")[:5]
+        latest_range = RangeOrder.objects.filter(
+            created_at__gte=start_dt,
+            created_at__lte=end_dt,
+        ).select_related("created_by").order_by("-created_at")[:5]
 
         return Response(
             {
@@ -306,6 +313,54 @@ class CashClosuresStatusView(APIView):
             },
         }
         return Response(data)
+
+
+class CashClosureDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk: int):
+        require_app_permission(request, "can_close_day")
+
+        try:
+            closure = CashClosure.objects.select_related("closed_by").get(
+                pk=pk,
+                status=CashClosure.STATUS_CLOSED,
+            )
+        except CashClosure.DoesNotExist as exc:
+            raise ValidationError({"detail": "No existe el cierre solicitado"}) from exc
+
+        start_dt, end_dt = _day_bounds(closure.operational_date)
+        include_course = closure.scope in [CashClosure.SCOPE_COURSE, CashClosure.SCOPE_FINAL]
+        include_range = closure.scope in [CashClosure.SCOPE_RANGE, CashClosure.SCOPE_FINAL]
+
+        course_entries = CourseEntry.objects.none()
+        if include_course:
+            course_entries = CourseEntry.objects.filter(
+                created_at__gte=start_dt,
+                created_at__lte=end_dt,
+            ).select_related("created_by").order_by("-created_at")
+
+        range_orders = RangeOrder.objects.none()
+        if include_range:
+            range_orders = RangeOrder.objects.filter(
+                created_at__gte=start_dt,
+                created_at__lte=end_dt,
+            ).select_related("created_by").order_by("-created_at")
+
+        return Response(
+            {
+                "closure": CashClosureSerializer(closure).data,
+                "course_entries": CourseEntrySerializer(course_entries, many=True).data,
+                "range_orders": RangeOrderSerializer(range_orders, many=True).data,
+                "payment_totals": {
+                    PaymentMethod.CASH: closure.total_cash_clp,
+                    PaymentMethod.CARD: closure.total_card_clp,
+                    PaymentMethod.TRANSFER: closure.total_transfer_clp,
+                    PaymentMethod.OTHER: closure.total_other_clp,
+                },
+                "per_user_totals": closure.per_user_totals or [],
+            }
+        )
 
 
 class CashCloseView(APIView):

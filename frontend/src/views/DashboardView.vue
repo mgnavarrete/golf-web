@@ -47,7 +47,7 @@
         <table>
           <thead>
             <tr>
-              <th>Hora</th>
+              <th>Fecha/Hora</th>
               <th>Nombre</th>
               <th>Personas</th>
               <th>Monto</th>
@@ -55,7 +55,7 @@
           </thead>
           <tbody>
             <tr v-for="item in summary?.latest_course_entries || []" :key="item.id">
-              <td>{{ formatTime(item.created_at) }}</td>
+              <td>{{ formatDateTime(item.created_at) }}</td>
               <td>{{ item.customer_name }}</td>
               <td>{{ item.people_count }}</td>
               <td>{{ formatClp(item.amount_clp) }}</td>
@@ -72,7 +72,7 @@
         <table>
           <thead>
             <tr>
-              <th>Hora</th>
+              <th>Fecha/Hora</th>
               <th>Nombre</th>
               <th>Canastos</th>
               <th>Total</th>
@@ -80,7 +80,7 @@
           </thead>
           <tbody>
             <tr v-for="item in summary?.latest_range_orders || []" :key="item.id">
-              <td>{{ formatTime(item.created_at) }}</td>
+              <td>{{ formatDateTime(item.created_at) }}</td>
               <td>{{ item.customer_name }}</td>
               <td>{{ item.baskets_count }}</td>
               <td>{{ formatClp(item.total_amount_clp) }}</td>
@@ -120,8 +120,15 @@ function formatClp(value: number) {
   );
 }
 
-function formatTime(value: string) {
-  return new Date(value).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 async function loadSummary() {

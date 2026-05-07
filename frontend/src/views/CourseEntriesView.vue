@@ -2,25 +2,33 @@
   <div class="page">
     <div class="header">
       <h1>Entradas a Cancha</h1>
-      <button class="btn btn-accent" @click="$router.push('/course-entries/new')">
+      <button class="btn btn-accent primary-create-button" @click="$router.push('/course-entries/new')">
         <i class="pi pi-plus"></i>
         Nuevo Registro
       </button>
     </div>
 
-    <section class="card filters">
-      <DatePicker v-model="filters.date_from" dateFormat="dd/mm/yy" showIcon placeholder="Fecha Desde" />
-      <DatePicker v-model="filters.date_to" dateFormat="dd/mm/yy" showIcon placeholder="Fecha Hasta" />
-      <Select
-        v-model="filters.payment_method"
-        :options="paymentOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Todos los pagos"
-      />
-      <button class="btn btn-secondary" @click="load">
-        <i class="pi pi-filter"></i> Filtrar
-      </button>
+    <section class="summary-grid">
+      <div class="summary-card">
+        <span>Personas</span>
+        <strong>{{ formatNumber(daySummary.people) }}</strong>
+      </div>
+      <div class="summary-card">
+        <span>Total Día</span>
+        <strong>{{ formatClp(daySummary.total) }}</strong>
+      </div>
+      <div class="summary-card">
+        <span>Efectivo</span>
+        <strong>{{ formatClp(daySummary.cash) }}</strong>
+      </div>
+      <div class="summary-card">
+        <span>Tarjeta</span>
+        <strong>{{ formatClp(daySummary.card) }}</strong>
+      </div>
+      <div class="summary-card">
+        <span>Transferencia</span>
+        <strong>{{ formatClp(daySummary.transfer) }}</strong>
+      </div>
     </section>
 
     <section class="card">
@@ -115,18 +123,8 @@ import {
 import { useAuthStore } from "@/stores/auth";
 import CourseEntryForm from "@/components/forms/CourseEntryForm.vue";
 import ConfirmActionModal from "@/components/modals/ConfirmActionModal.vue";
-import DatePicker from "primevue/datepicker";
-import Select from "primevue/select";
 
 const auth = useAuthStore();
-
-const paymentOptions = [
-  { label: "Todos los pagos", value: "" },
-  { label: "Efectivo", value: "CASH" },
-  { label: "Tarjeta", value: "CARD" },
-  { label: "Transferencia", value: "TRANSFER" },
-  { label: "Otro", value: "OTHER" },
-];
 
 const error = ref("");
 const entries = ref<CourseEntry[]>([]);
@@ -141,12 +139,18 @@ const paginatedEntries = computed(() => {
   return entries.value.slice(start, start + itemsPerPage);
 });
 
-const today = new Date();
-
-const filters = ref({
-  date_from: today,
-  date_to: today,
-  payment_method: "",
+const daySummary = computed(() => {
+  return entries.value.reduce(
+    (summary, item) => {
+      summary.people += item.people_count || 0;
+      summary.total += item.amount_clp || 0;
+      if (item.payment_method === "CASH") summary.cash += item.amount_clp || 0;
+      if (item.payment_method === "CARD") summary.card += item.amount_clp || 0;
+      if (item.payment_method === "TRANSFER") summary.transfer += item.amount_clp || 0;
+      return summary;
+    },
+    { people: 0, total: 0, cash: 0, card: 0, transfer: 0 }
+  );
 });
 
 const canEdit = computed(() => auth.me?.permissions?.can_edit_course_entries || auth.isAdmin);
@@ -158,6 +162,10 @@ function paymentLabel(method: string) {
 
 function formatClp(value: number) {
   return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(value);
+}
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 }).format(value || 0);
 }
 
 function formatDate(value: string) {
@@ -173,10 +181,10 @@ function formatDateForApi(d: Date | null) {
 async function load() {
   error.value = "";
   try {
+    const today = new Date();
     const params: Record<string, string> = {};
-    if (filters.value.date_from) params.date_from = formatDateForApi(filters.value.date_from);
-    if (filters.value.date_to) params.date_to = formatDateForApi(filters.value.date_to);
-    if (filters.value.payment_method) params.payment_method = filters.value.payment_method;
+    params.date_from = formatDateForApi(today);
+    params.date_to = formatDateForApi(today);
     entries.value = await listCourseEntries(params);
     currentPage.value = 1;
   } catch (err: any) {
@@ -268,6 +276,40 @@ onMounted(load);
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.primary-create-button {
+  min-height: 52px;
+  padding: 0 24px;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 10px 24px rgba(27, 67, 50, 0.18);
+}
+.primary-create-button i {
+  font-size: 18px;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+.summary-card {
+  background: var(--minttu-white);
+  border: none;
+  border-radius: var(--minttu-radius-lg);
+  padding: 16px;
+  box-shadow: var(--minttu-shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.summary-card span {
+  color: var(--minttu-gray);
+  font-size: 12px;
+}
+.summary-card strong {
+  color: var(--minttu-primary);
+  font-size: 18px;
 }
 .card {
   background: var(--minttu-white);
@@ -387,8 +429,23 @@ tbody tr:hover {
 
 @media (max-width: 1024px) {
   .form-grid,
-  .filters {
+  .filters,
+  .summary-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .primary-create-button {
+    min-height: 44px;
+    width: 100%;
+    padding: 0 16px;
+    font-size: 14px;
   }
 }
 </style>

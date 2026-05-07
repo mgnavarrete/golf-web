@@ -67,11 +67,19 @@ const routeMap: Record<string, RouteInfo> = {
 
 const currentPageTitle = computed(() => {
   const currentRoute = route.path;
+  if (currentRoute.startsWith("/closures/")) return "Detalle de Cierre";
   return routeMap[currentRoute]?.label || "Inicio";
 });
 
 const items = computed(() => {
   const currentRoute = route.path;
+  if (currentRoute.startsWith("/closures/")) {
+    const closuresRoute = routeMap["/closures"]!;
+    return [
+      closuresRoute,
+      { label: "Detalle de Cierre", materialIcon: "receipt_long", route: currentRoute },
+    ];
+  }
   const routeInfo = routeMap[currentRoute];
   if (routeInfo && currentRoute !== "/") {
     return [routeInfo];
